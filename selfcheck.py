@@ -1,6 +1,5 @@
 """The one runnable check for the pipeline. `python selfcheck.py` exits non-zero on failure."""
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 
@@ -8,10 +7,11 @@ from store import append_jsonl, new_id, read_jsonl, write_jsonl
 
 
 def check_store(tmp: Path, data: Path) -> None:
-    p = tmp / "x.jsonl"
+    p = data / "nested" / "x.jsonl"  # parent does not exist yet: exercises mkdir
     append_jsonl(p, {"a": 1, "k": "한글"})
-    append_jsonl(p, {"a": 2})
-    assert read_jsonl(p) == [{"a": 1, "k": "한글"}, {"a": 2}], read_jsonl(p)
+    append_jsonl(p, {"a": 2, "sep": "a b c\u0085d"})  # line separators must survive a round trip
+    assert read_jsonl(p) == [{"a": 1, "k": "한글"}, {"a": 2, "sep": "a b c\u0085d"}], read_jsonl(p)
+    assert b"\r\n" not in p.read_bytes(), "JSONL must use LF on every platform"
     assert "한글" in p.read_text(encoding="utf-8"), "must not escape non-ASCII"
     write_jsonl(p, [{"a": 3}])
     assert read_jsonl(p) == [{"a": 3}]
