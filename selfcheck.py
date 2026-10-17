@@ -264,8 +264,46 @@ def check_eval(tmp: Path, data: Path) -> None:
     assert "채점표" in prompt and '"source"' not in prompt and "grounding" not in prompt
 
 
+def check_verify(tmp: Path, data: Path) -> None:
+    import pipeline
+    probs = {p["source"]: p for p in read_jsonl(data / "problems.jsonl") if p["kind"] == "checkable"}
+    for src in ("sonnet", "fable"):  # review two of the three checkers; leave opus unreviewed
+        f = tmp / "checkers" / f"{probs[src]['id']}.py"
+        lines = f.read_text(encoding="utf-8").splitlines()
+        lines[0] = "# REVIEWED"
+        f.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    assert pipeline.verify(data) == 6, "2 reviewed problems × 3 solvers"
+    assert pipeline.verify(data) == 0, "verify must be idempotent"
+    sols = {s["id"]: s for s in read_jsonl(data / "solutions.jsonl")}
+    verdicts = {(probs_src(sols[v["solution_id"]], probs), sols[v["solution_id"]]["solver"]): v["verdict"]
+                for v in read_jsonl(data / "verifications.jsonl")}
+    assert verdicts[("sonnet", "opus")] == "pass" and verdicts[("sonnet", "fable")] == "pass"
+    assert verdicts[("sonnet", "sonnet")] == "fail"
+    assert all(verdicts[("fable", m)] == "fail" for m in ("sonnet", "opus", "fable")), verdicts
+    assert ("opus", "opus") not in verdicts, "unreviewed checker must be skipped"
+
+
+def probs_src(sol: dict, probs: dict) -> str:
+    return next(src for src, p in probs.items() if p["id"] == sol["problem_id"])
+
+
+def check_verify_errors(tmp: Path, data: Path) -> None:
+    """Own data dir: a crashing/hanging/missing checker is recorded as 'error' (never raises); no candidate → 'na'."""
+    import pipeline
+    d = tmp / "verr" / "data"
+    (tmp / "verr" / "checkers").mkdir(parents=True)
+    for pid, body in (("P-crash", "raise RuntimeError('boom')"), ("P-slow", "__import__('time').sleep(30)")):
+        (tmp / "verr" / "checkers" / f"{pid}.py").write_text(f"# REVIEWED\ndef check(c):\n    {body}\n", encoding="utf-8")
+    for pid in ("P-crash", "P-slow", "P-miss", "P-na"):
+        append_jsonl(d / "problems.jsonl", {"id": pid, "kind": "checkable"})
+        append_jsonl(d / "solutions.jsonl", {"id": "S-" + pid, "problem_id": pid, "candidate": None if pid == "P-na" else [1]})
+    assert pipeline.verify(d, timeout=3) == 4
+    got = {v["problem_id"]: v["verdict"] for v in read_jsonl(d / "verifications.jsonl")}
+    assert got == {"P-crash": "error", "P-slow": "error", "P-miss": "error", "P-na": "na"}, got
+
+
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
-          check_eval]
+          check_eval, check_verify, check_verify_errors]
 
 
 def main() -> None:

@@ -176,3 +176,43 @@ def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
             if (model, "solution", s["id"]) not in done:
                 rate(model, "solution", s["id"], prompt, EVAL_SOLUTION_PROPS)
     return made
+
+
+def verify(data_dir: Path, timeout: int = 60) -> int:
+    problems = {p["id"]: p for p in all_problems(data_dir)}
+    ver_path = data_dir / "verifications.jsonl"
+    done = {v["solution_id"] for v in read_jsonl(ver_path)}
+    cdir = data_dir.parent / "checkers"
+    runner = ROOT / "checker_runner.py"
+    made = 0
+    for s in read_jsonl(data_dir / "solutions.jsonl"):
+        if s["id"] in done:
+            continue
+        p = problems.get(s["problem_id"])
+        if not p or p.get("kind") != "checkable":
+            continue
+        checker = cdir / f"{p['id']}.py"
+        if s.get("candidate") is None:
+            verdict, log = "na", "solution submitted no candidate"
+        elif not checker.exists():
+            verdict, log = "error", f"checker file missing: {checker}"
+        elif checker.read_text(encoding="utf-8").splitlines()[0].strip() != "# REVIEWED":
+            print(f"skip {s['id']}: {checker.name} is not marked '# REVIEWED'")
+            continue
+        else:
+            cand = data_dir / "raw" / "verify" / f"{s['id']}_candidate.json"
+            cand.parent.mkdir(parents=True, exist_ok=True)
+            cand.write_text(json.dumps(s["candidate"]), encoding="utf-8")
+            try:
+                r = subprocess.run([sys.executable, "-I", str(runner), str(checker), str(cand)],
+                                   capture_output=True, text=True, encoding="utf-8", errors="replace",
+                                   timeout=timeout, cwd=cand.parent)
+                last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
+                verdict = {"PASS": "pass", "FAIL": "fail"}.get(last, "error")
+                log = (r.stdout + r.stderr)[-2000:]
+            except subprocess.TimeoutExpired:
+                verdict, log = "error", f"timeout after {timeout}s"
+        append_jsonl(ver_path, {"solution_id": s["id"], "problem_id": p["id"], "verdict": verdict,
+                                "log": log, "created_at": now()})
+        made += 1
+    return made

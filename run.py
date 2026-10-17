@@ -45,6 +45,7 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--n", type=int, default=5)
     sub.add_parser("solve", help="every problem (incl. human_problems.jsonl) × every model")
     sub.add_parser("eval", help="AI raters score every problem and solution, one item per call")
+    sub.add_parser("verify", help="run REVIEWED checkers on submitted candidates")
     sub.add_parser("probe", help="one tiny live call per model; checks auth, aliases and leaked context")
     sub.add_parser("selfcheck", help="run the offline self-check")
     return ap
@@ -66,6 +67,8 @@ def main(argv=None) -> None:
             report(a, pipeline.solve(a.data_dir, models, a.dry_run))
         elif a.cmd == "eval":
             report(a, pipeline.eval_ai(a.data_dir, models, a.dry_run))
+        elif a.cmd == "verify":
+            report(a, pipeline.verify(a.data_dir))
         elif a.cmd == "probe":
             probe(models, a.data_dir, a.dry_run)
         elif a.cmd == "selfcheck":
