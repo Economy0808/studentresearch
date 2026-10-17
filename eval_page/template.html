@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>문제·풀이 평가</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.11/contrib/auto-render.min.js"></script>
+<style>
+:root{--bg:#faf9f6;--fg:#1d1c1a;--muted:#6b6862;--line:#dcd9d2;--accent:#2f5d8a;--card:#ffffff;--on-accent:#ffffff;--err:#b4232c}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17181a;--fg:#ecebe7;--muted:#9a978f;--line:#34373b;--accent:#7fb0e0;--card:#1f2124;--on-accent:#10202f;--err:#ff8a8f;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#17181a;--fg:#ecebe7;--muted:#9a978f;--line:#34373b;--accent:#7fb0e0;--card:#1f2124;--on-accent:#10202f;--err:#ff8a8f;color-scheme:dark}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:24px 16px 80px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;margin:12px 0}
+.math{white-space:pre-wrap;overflow-x:auto}
+.muted{color:var(--muted);font-size:14px}
+fieldset{border:0;padding:0;margin:14px 0}
+legend{font-weight:600;margin-bottom:4px}
+.scale label{display:inline-block;margin-right:10px}
+textarea{width:100%;min-height:90px;box-sizing:border-box;font:inherit;background:var(--card);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:8px}
+button{font:inherit;padding:10px 16px;border-radius:6px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);cursor:pointer}
+button.secondary{background:transparent;color:var(--accent)}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+details pre{white-space:pre-wrap;font:inherit}
+.err{color:var(--err)}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script id="blind" type="application/json">/*BLIND_JSON*/</script>
+<script>
+(() => {
+  let BLIND = null;
+  try { BLIND = JSON.parse(document.getElementById('blind').textContent); } catch (e) { BLIND = null; }
+  const app = document.getElementById('app');
+  const $ = (tag, attrs = {}, ...kids) => { const el = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') el.className = v; else if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v); } for (const kid of kids) el.append(kid); return el; };
+  const mathBlock = (text) => { const d = $('div', { class: 'math' }); d.textContent = text || ''; queueMicrotask(() => { if (window.renderMathInElement) renderMathInElement(d, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }], throwOnError: false }); }); return d; };
+
+  // deterministic shuffle seeded by the rater code (mulberry32 over a string hash)
+  const seeded = (str) => { let h = 1779033703 ^ str.length; for (const c of str) { h = Math.imul(h ^ c.charCodeAt(0), 3432918353); h = (h << 13) | (h >>> 19); } return () => { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; };
+  const shuffle = (arr, rnd) => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
+  const buildSteps = (code) => { const rnd = seeded(code); const steps = []; for (const p of shuffle([...BLIND.problems], rnd)) { steps.push({ type: 'problem', p }); for (const s of shuffle([...p.solutions], rnd)) steps.push({ type: 'solution', p, s }); } steps.push({ type: 'guess' }); steps.push({ type: 'done' }); return steps; };
+
+  // state: {rater, idx, ratings: {"problem:P-x": row, "solution:S-y": row}}
+  const KEY = (code) => 'hakja:' + code;
+  const load = (code) => { try { return JSON.parse(localStorage.getItem(KEY(code))) || null; } catch (e) { return null; } };
+  const save = (state) => { try { localStorage.setItem(KEY(state.rater), JSON.stringify(state)); } catch (e) { /* storage unavailable: the download is the record */ } };
+  let dbp = null; // best-effort mirror; the JSON download is the record
+  const mirror = async (row) => { try { if (!dbp) dbp = (window.claude && window.claude.use) ? window.claude.use('db') : Promise.resolve(null); const db = await dbp; if (db) await db.doc('ratings/' + row.rater + ':' + row.target_id).set(row); } catch (e) { /* ignore */ } };
+
+  let state = null, steps = [];
+  const nowIso = () => new Date().toISOString();
+  const download = () => { const rows = Object.values(state.ratings); const blob = new Blob([JSON.stringify({ rater: state.rater, exported_at: nowIso(), ratings: rows }, null, 1)], { type: 'application/json' }); const a = $('a', { href: URL.createObjectURL(blob), download: 'ratings_' + state.rater + '.json' }); document.body.append(a); a.click(); a.remove(); };
+
+  const scale = (name, labelText) => { const fs = $('fieldset', { class: 'scale' }, $('legend', {}, labelText)); for (const v of [1, 2, 3, 4, 5, 'na']) fs.append($('label', {}, $('input', { type: 'radio', name, value: String(v), required: '' }), ' ' + (v === 'na' ? '판단 불가' : v))); return fs; };
+  const readScale = (form, name) => { const v = form.elements[name].value; return v === 'na' ? null : Number(v); };
+
+  const header = (title) => $('div', { class: 'bar' }, $('h2', {}, title), $('div', {}, $('span', { class: 'muted' }, state ? `${state.rater} · ${Math.min(state.idx + 1, steps.length)}/${steps.length} ` : ''), state ? $('button', { class: 'secondary', onclick: download }, '내 응답 JSON 다운로드') : ''));
+  const rubric = () => $('details', {}, $('summary', {}, '채점 기준 보기'), $('pre', {}, BLIND.rubric_md));
+
+  const render = () => {
+    app.replaceChildren();
+    if (!BLIND || !BLIND.problems) { app.append($('p', { class: 'err' }, '평가 데이터가 없습니다. 연구자가 run.py export-human을 다시 실행해야 합니다.')); return; }
+    if (!state) return renderStart();
+    const step = steps[state.idx];
+    if (step.type === 'problem') return renderProblem(step);
+    if (step.type === 'solution') return renderSolution(step);
+    if (step.type === 'guess') return renderGuess();
+    return renderDone();
+  };
+
+  const renderStart = () => {
+    const form = $('form', { onsubmit: (e) => { e.preventDefault(); const code = form.elements.code.value.trim(); if (!BLIND.raters.includes(code)) { form.querySelector('.err').textContent = '등록되지 않은 평가자 코드입니다.'; return; } steps = buildSteps(code); state = load(code) || { rater: code, idx: 0, ratings: {} }; if (state.idx >= steps.length) state.idx = steps.length - 1; render(); } },
+      $('p', {}, '연구자에게 받은 평가자 코드를 입력하세요. 같은 브라우저에서 다시 열면 이어서 할 수 있습니다.'),
+      $('input', { name: 'code', autocomplete: 'off', required: '' }), ' ', $('button', { type: 'submit' }, '시작'), $('p', { class: 'err' }));
+    app.append($('h1', {}, '문제·풀이 블라인드 평가'), $('div', { class: 'card' }, form), rubric());
+  };
+
+  const commit = (row) => { state.ratings[row.target_type + ':' + row.target_id] = row; state.idx += 1; save(state); mirror(row); render(); window.scrollTo(0, 0); };
+
+  const renderProblem = ({ p }) => {
+    const prev = state.ratings['problem:' + p.id];
+    const form = $('form', { onsubmit: (e) => { e.preventDefault(); commit({ rater: state.rater, target_type: 'problem', target_id: p.id, clarity: readScale(form, 'clarity'), difficulty: readScale(form, 'difficulty'), want_to_solve: readScale(form, 'want_to_solve'), richness_list: form.elements.richness.value.split('\n').map(s => s.trim()).filter(Boolean), known_problem: form.elements.known.value === 'na' ? null : form.elements.known.value === 'yes', created_at: nowIso() }); } },
+      scale('clarity', '명확성 (1~5)'), scale('difficulty', '난이도 (1~5)'),
+      $('fieldset', {}, $('legend', {}, '풍요로움: 이 문제가 풀리면 쉬워지거나 따라오는 다른 문제 (한 줄에 하나, 없으면 비움)'), $('textarea', { name: 'richness' })),
+      scale('want_to_solve', '풀고 싶은 정도 (1~5)'),
+      $('fieldset', { class: 'scale' }, $('legend', {}, '이미 알려진 문제·정리와 사실상 같은가'), ...[['yes', '예'], ['no', '아니오'], ['na', '판단 불가']].map(([v, t]) => $('label', {}, $('input', { type: 'radio', name: 'known', value: v, required: '' }), ' ' + t))),
+      $('button', { type: 'submit' }, '저장하고 다음'));
+    app.append(header('문제 평가'), $('div', { class: 'card' }, $('h3', {}, '문제'), mathBlock(p.statement), p.finite_form ? $('div', {}, $('h4', {}, '유한 인스턴스'), mathBlock(p.finite_form)) : '', $('h4', {}, '제시된 중요성'), mathBlock(p.why_important)), rubric(), $('div', { class: 'card' }, form));
+    if (prev) { for (const k of ['clarity', 'difficulty', 'want_to_solve']) form.elements[k].value = prev[k] === null ? 'na' : String(prev[k]); form.elements.richness.value = (prev.richness_list || []).join('\n'); form.elements.known.value = prev.known_problem === null ? 'na' : (prev.known_problem ? 'yes' : 'no'); }
+  };
+
+  const renderSolution = ({ p, s }) => {
+    const prev = state.ratings['solution:' + s.id];
+    const form = $('form', { onsubmit: (e) => { e.preventDefault(); const u = form.elements.understandable.value; commit({ rater: state.rater, target_type: 'solution', target_id: s.id, correctness: readScale(form, 'correctness'), clarity_sol: readScale(form, 'clarity_sol'), understandable: u === 'na' ? null : u === 'yes', created_at: nowIso() }); } },
+      scale('correctness', '정확성 (1~5)'), scale('clarity_sol', '명료성 (1~5)'),
+      $('fieldset', { class: 'scale' }, $('legend', {}, '이해 가능 여부: 핵심 아이디어를 자기 말로 다시 설명할 수 있는가'), ...[['yes', '예'], ['no', '아니오'], ['na', '판단 불가']].map(([v, t]) => $('label', {}, $('input', { type: 'radio', name: 'understandable', value: v, required: '' }), ' ' + t))),
+      $('button', { type: 'submit' }, '저장하고 다음'));
+    app.append(header('풀이 평가'), $('div', { class: 'card' }, $('details', {}, $('summary', {}, '문제 다시 보기'), mathBlock(p.statement), p.finite_form ? mathBlock(p.finite_form) : ''), $('h3', {}, '풀이'), mathBlock(s.text), s.candidate != null ? $('div', {}, $('h4', {}, '제출된 답(candidate)'), $('pre', { class: 'math' }, JSON.stringify(s.candidate))) : ''), rubric(), $('div', { class: 'card' }, form));
+    if (prev) { for (const k of ['correctness', 'clarity_sol']) form.elements[k].value = prev[k] === null ? 'na' : String(prev[k]); form.elements.understandable.value = prev.understandable === null ? 'na' : (prev.understandable ? 'yes' : 'no'); }
+  };
+
+  const renderGuess = () => {
+    const sel = (opts) => { const s = $('select', {}); for (const [v, t] of opts) s.append($('option', { value: v }, t)); return s; };
+    const P_OPTS = [['unknown', '모름'], ['human', '사람'], ['ai_low', 'AI(하위 등급)'], ['ai_mid', 'AI(중위 등급)'], ['ai_high', 'AI(상위 등급)']];
+    const S_OPTS = P_OPTS.filter(([v]) => v !== 'human');
+    const rows = [];
+    const list = $('div', {});
+    for (const p of BLIND.problems) { const sp = sel(P_OPTS); rows.push(['problem', p.id, sp]); list.append($('div', { class: 'card' }, $('div', { class: 'muted' }, '문제 ' + p.id), mathBlock(p.statement.slice(0, 240)), $('label', {}, '출처 추측: ', sp), ...p.solutions.map(s => { const ss = sel(S_OPTS); rows.push(['solution', s.id, ss]); return $('div', {}, $('span', { class: 'muted' }, '풀이 ' + s.id + ' '), $('label', {}, '출처 추측: ', ss)); }))); }
+    const finish = (apply) => { if (apply) for (const [tt, id, s] of rows) { const r = state.ratings[tt + ':' + id]; if (r) r.source_guess = s.value; } state.idx += 1; save(state); render(); window.scrollTo(0, 0); };
+    app.append(header('출처 추측 (선택)'), $('p', {}, '각 문제와 풀이를 누가 만들었을지 추측해 주세요. 건너뛰어도 됩니다.'), list, $('div', { class: 'bar' }, $('button', { onclick: () => finish(true) }, '저장하고 완료'), $('button', { class: 'secondary', onclick: () => finish(false) }, '건너뛰기')));
+  };
+
+  const renderDone = () => { app.append(header('완료'), $('div', { class: 'card' }, $('p', {}, '수고하셨습니다. 아래 버튼으로 응답 파일을 내려받아 연구자에게 보내 주세요.'), $('button', { onclick: download }, '내 응답 JSON 다운로드'), ' ', $('button', { class: 'secondary', onclick: () => { state.idx = 0; save(state); render(); } }, '처음부터 다시 보기'))); };
+
+  render();
+})();
+</script>
+</body>
+</html>
