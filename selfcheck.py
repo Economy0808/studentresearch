@@ -377,7 +377,18 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
 
 
 def check_analyze(tmp: Path, data: Path) -> None:
+    import json
     import analyze
+    import pipeline
+    blind = json.loads((data / "blind.json").read_text(encoding="utf-8"))
+    r2 = [{"rater": "R2", "target_type": "problem", "target_id": p["id"], "clarity": 4, "difficulty": 2,
+           "want_to_solve": 3, "richness_list": ["a", "b"], "known_problem": None} for p in blind["problems"]]
+    f2 = tmp / "human_r2.json"
+    f2.write_text(json.dumps(r2), encoding="utf-8")
+    assert pipeline.import_human(data, f2) == len(blind["problems"])
+    opus_checkable = next(p for p in read_jsonl(data / "problems.jsonl") if p["kind"] == "checkable" and p["source"] == "opus")
+    some_sol = next(s for s in read_jsonl(data / "solutions.jsonl") if s["problem_id"] == opus_checkable["id"])
+    append_jsonl(data / "verifications.jsonl", {"solution_id": some_sol["id"], "problem_id": opus_checkable["id"], "verdict": "error", "log": "fixture", "created_at": "2026-10-18T00:00:00+00:00"})
     t = analyze.main(data, tmp / "results")
     ai = t["q_g"].loc["ai"]
     assert [ai.loc[s, "richness"] for s in ("sonnet", "opus", "fable")] == [1.0, 2.0, 3.0], ai
@@ -387,6 +398,14 @@ def check_analyze(tmp: Path, data: Path) -> None:
     assert set(t["self_preference"]["rater"]) == {"sonnet", "opus", "fable"}
     assert (tmp / "results" / "metrics.md").exists() and (tmp / "results" / "q_g.csv").exists()
     assert not t["cannot_judge"].empty, "human ratings from check_roundtrip must appear"
+    lad = t["ladder_ceiling"].set_index("generator")
+    assert [int(lad.loc[g, "n_verified"]) for g in ("sonnet", "opus", "fable")] == [3, 0, 3], lad
+    kw = t["kendall_w"]
+    assert not kw.empty and kw["n_raters"].eq(2).all() and kw["kendall_W"].dropna().between(0, 1).all(), kw
+    cj = t["cannot_judge"]
+    assert "cj_difficulty" in cj and cj[cj.target_type == "problem"]["cj_difficulty"].eq(0.5).all(), cj  # R1 null, R2 = 2
+    kr = t["kruskal"]
+    assert kr[kr.rater_type == "ai"]["n_problems"].eq(9).all(), kr
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
