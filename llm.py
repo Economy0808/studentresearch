@@ -102,4 +102,4 @@ def fake(model: str, schema: dict, prompt: str) -> dict:
                 "richness_list": ["derived question"] * gen, "known_problem": False}
     else:
         data = {"correctness": min(5, 2 + g), "clarity_sol": 3, "understandable": True}
-    return {"is_error": False, "structured_output": data, "result": json.dumps(data), "fake": True}
+    return {"is_error": False, "structured_output": data, "result": json.dumps(data, ensure_ascii=False), "fake": True}
