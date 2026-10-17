@@ -234,7 +234,19 @@ def check_gen(tmp: Path, data: Path) -> None:
     assert len(read_jsonl(data / "problems.jsonl")) == 9, "shared data dir must still hold exactly 9 problems"
 
 
-CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen]
+def check_solve(tmp: Path, data: Path) -> None:
+    import pipeline
+    assert pipeline.solve(data, dry_run=True) == 27
+    assert pipeline.solve(data, dry_run=True) == 0, "solve must be idempotent"
+    sols = read_jsonl(data / "solutions.jsonl")
+    assert len(sols) == 27 and all(s["id"].startswith("S-") for s in sols)
+    assert {s["solver"] for s in sols} == {"sonnet", "opus", "fable"}
+    raw = next((data / "raw" / "solve").glob("*.json")).read_text(encoding="utf-8")
+    for leak in ('"source"', "grounding", "gen_key"):
+        assert leak not in __import__("json").loads(raw)["prompt"], f"solve prompt leaks {leak}"
+
+
+CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve]
 
 
 def main() -> None:

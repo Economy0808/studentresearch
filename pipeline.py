@@ -111,3 +111,27 @@ def _write_checker(data_dir: Path, p: dict) -> None:
               f"# finite_form: {one_line(p['finite_form'])}\n"
               f"# candidate_format: {one_line(p['candidate_format'])}\n\n")
     (cdir / f"{p['id']}.py").write_text(header + p["checker_code"], encoding="utf-8")
+
+
+def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
+    template = load_prompt("solve.md")
+    schema = _schema(SOLVE_PROPS)
+    sol_path = data_dir / "solutions.jsonl"
+    done = {(s["problem_id"], s["solver"]) for s in read_jsonl(sol_path)}
+    made = 0
+    for p in all_problems(data_dir):
+        for model in models:
+            if (p["id"], model) in done:
+                continue
+            prompt = fill(template, statement=p["statement"], finite_form=p.get("finite_form"),
+                          candidate_format=p.get("candidate_format"))
+            raw = data_dir / "raw" / "solve" / f"{p['id']}_{model}.json"
+            try:
+                out = llm.call(model, system(), prompt, schema, raw, dry_run)
+            except llm.CallFailed as e:
+                record_failure(data_dir, "solve", p["id"], model, e)
+                continue
+            append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
+                                    **{k: out[k] for k in SOLVE_PROPS}, "created_at": now()})
+            made += 1
+    return made
