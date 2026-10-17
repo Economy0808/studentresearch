@@ -51,7 +51,11 @@ def check_llm_errors(tmp: Path, data: Path) -> None:
         else:
             raise AssertionError(f"{msg!r} must raise CallFailed")
     for msg in ("Failed to authenticate: OAuth session expired", "You've hit your usage limit",
-                "Rate limit reached for this plan", "Not logged in. Run /login"):
+                "Rate limit reached for this plan", "Not logged in. Run /login",
+                "You've hit your session limit · resets 3pm",
+                "You've hit your Fable limit · continuing on Opus uses usage credits",
+                "You're out of usage credits", "You're out of extra usage",
+                "Invalid API key · Fix external API key", "Authentication error · Try again"):
         try:
             llm._raise_if_error({"is_error": True, "result": msg})
         except llm.StopRun:
@@ -88,6 +92,7 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         assert "--no-session-persistence" in cmd
         assert json.loads(cmd[cmd.index("--json-schema") + 1])["type"] == "object"
         assert seen["kw"]["input"] == "PROMPT" and seen["kw"]["encoding"] == "utf-8"
+        assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == 1800, seen["kw"]
         assert Path(seen["kw"]["cwd"]) == tmp / "raw" / "_cwd" and (tmp / "raw" / "_cwd").is_dir()
         seen["stdout_next"] = "not json"
         try:
@@ -98,6 +103,17 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
             raise AssertionError("non-JSON stdout must raise CallFailed")
         logged = json.loads((tmp / "raw" / "t" / "bad.json").read_text(encoding="utf-8"))["cli_output"]
         assert logged["stdout"] == "not json" and logged["is_error"] is True, logged
+        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
+                                          "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 1}}})
+        try:
+            llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "wrong.json")
+        except llm.CallFailed as e:
+            assert "not opus" in str(e), e
+        else:
+            raise AssertionError("an answer from another model must raise CallFailed")
+        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
+                                          "modelUsage": {"claude-opus-5-5": {"inputTokens": 1}}})
+        assert llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "right.json") == {"ok": True}
     finally:
         llm.subprocess.run, llm.claude_exe = real_run, real_exe
 

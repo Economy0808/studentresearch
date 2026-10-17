@@ -10,7 +10,9 @@ from store import now
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
 # Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
-STOP_MARKERS = ("usage limit", "rate limit", "authenticate", "oauth", "/login", "not logged in", "credit balance")
+STOP_MARKERS = ("usage limit", "rate limit", "you've hit your", "you've reached your", "usage credits", "extra usage",
+                "spend limit", "credit balance", "authenticate", "authentication error", "oauth", "/login",
+                "not logged in", "invalid api key")
 
 
 class StopRun(Exception):
@@ -45,6 +47,9 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
                                     "started_at": started, "finished_at": now(), "cli_output": out},
                                    ensure_ascii=False, indent=1), encoding="utf-8")
     _raise_if_error(out)
+    used = [k for k in (out.get("modelUsage") or {}).keys()]
+    if used and not any(model in k.lower() for k in used):
+        raise CallFailed(f"answered by {used}, not {model}; discarded")
     data = out.get("structured_output")
     if data is None:
         try:
