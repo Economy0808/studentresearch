@@ -1,3 +1,4 @@
 __pycache__/
 data/raw/_cwd/
+tmp_dry/
 results/*.png

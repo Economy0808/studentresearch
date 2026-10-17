@@ -278,7 +278,9 @@ def import_human(data_dir: Path, path: Path) -> int:
     rows = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(rows, dict):
         rows = rows.get("ratings", [])
-    allowed = set(json.loads(blind_path.read_text(encoding="utf-8"))["raters"])
+    blind = json.loads(blind_path.read_text(encoding="utf-8"))
+    allowed = set(blind["raters"])
+    known = {p["id"] for p in blind["problems"]} | {s["id"] for p in blind["problems"] for s in p["solutions"]}
     clean: dict[tuple, dict] = {}  # keyed so a duplicate row inside one file collapses; the last one wins
     for r in rows:
         if not isinstance(r, dict):
@@ -296,11 +298,15 @@ def import_human(data_dir: Path, path: Path) -> int:
             row[k] = _clean_field(k, r.get(k))
         row["source_guess"] = r["source_guess"] if isinstance(r.get("source_guess"), str) and r["source_guess"] in GUESSES else None
         row["created_at"] = r.get("created_at") if isinstance(r.get("created_at"), str) and r.get("created_at") else now()
+        if row["target_id"] not in known:
+            print(f"warning: target_id {row['target_id']!r} is not in blind.json (stale export?); row kept")
         clean[(row["rater"], row["target_type"], row["target_id"])] = row
     keys = set(clean)
     clean = list(clean.values())
     ratings_path = data_dir / "ratings.jsonl"
-    kept = [e for e in read_jsonl(ratings_path)
-            if not (e["rater_type"] == "human" and (e["rater"], e["target_type"], e["target_id"]) in keys)]
+    old = read_jsonl(ratings_path)
+    replaced = len(keys & {(e["rater"], e["target_type"], e["target_id"]) for e in old if e["rater_type"] == "human"})
+    kept = [e for e in old if not (e["rater_type"] == "human" and (e["rater"], e["target_type"], e["target_id"]) in keys)]
     write_jsonl(ratings_path, kept + clean)
+    print(f"import-human: {len(clean) - replaced} new, {replaced} replaced")
     return len(clean)

@@ -18,12 +18,18 @@ PROBE_PROMPT = ("Return ok=true, model_name=the model you are, saw_other_instruc
 
 def probe(models: list[str], data_dir: Path, dry_run: bool = False) -> None:
     for m in models:
+        raw = data_dir / "raw" / "probe" / f"{m}.json"
         try:
-            out = llm.call(m, "You are a research mathematician. Respond only in the requested JSON.",
-                           PROBE_PROMPT, PROBE_SCHEMA, data_dir / "raw" / "probe" / f"{m}.json", dry_run)
+            out = llm.call(m, pipeline.system(), PROBE_PROMPT, PROBE_SCHEMA, raw, dry_run)
             print(f"{m}: {json.dumps(out, ensure_ascii=False)}")
         except llm.CallFailed as e:
             print(f"{m}: FAILED {e}")
+        if raw.exists():  # token counts expose context injected beyond the system prompt (CLAUDE.md, skills, memory)
+            cli = json.loads(raw.read_text(encoding="utf-8"))["cli_output"]
+            u = cli.get("usage") or {}
+            print(f"  modelUsage={list(cli.get('modelUsage') or {})} input_tokens={u.get('input_tokens')} "
+                  f"cache_read_input_tokens={u.get('cache_read_input_tokens')} "
+                  f"cache_creation_input_tokens={u.get('cache_creation_input_tokens')}")
 
 
 def report(a, n: int) -> None:
@@ -35,7 +41,7 @@ def report(a, n: int) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description="AI problem generation / solving / evaluation pipeline")
-    ap.add_argument("--data-dir", type=Path, default=Path("data"))
+    ap.add_argument("--data-dir", type=Path, default=Path(__file__).resolve().parent / "data")
     ap.add_argument("--dry-run", action="store_true", help="use the fake model; no CLI calls")
     ap.add_argument("--models", default=",".join(llm.MODELS), help="comma-separated model aliases")
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -64,6 +70,11 @@ def main(argv=None) -> None:
     bad = [m for m in models if m not in llm.GRADE]
     if bad:
         ap.error(f"unknown model alias(es) {bad}; allowed: {list(llm.GRADE)}")
+    if a.dry_run and a.data_dir.resolve().parent == Path(__file__).resolve().parent:
+        ap.error("--dry-run must not touch the real dataset or its sibling folders: use --data-dir tmp_dry/data")
+    hp = a.data_dir.resolve().parent / "human_problems.jsonl"
+    if a.cmd in ("solve", "eval", "export-human") and not hp.exists():
+        print(f"warning: {hp} not found; no human control problems will be included")
     try:
         if a.cmd == "gen":
             report(a, pipeline.gen(a.data_dir, a.context, a.kind, a.n, models, a.dry_run))

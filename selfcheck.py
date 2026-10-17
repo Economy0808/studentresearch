@@ -19,6 +19,9 @@ def check_store(tmp: Path, data: Path) -> None:
     assert read_jsonl(p) == [{"a": 3}]
     assert not list(p.parent.glob("*.tmp")), "write_jsonl must leave no temp file behind (atomic replace)"
     assert read_jsonl(tmp / "missing.jsonl") == []
+    bom = tmp / "bom.jsonl"  # PowerShell/Notepad "UTF-8" files start with a BOM
+    bom.write_bytes(b"\xef\xbb\xbf" + '{"a": "한글"}\n{"a": 2}\n'.encode("utf-8"))
+    assert read_jsonl(bom) == [{"a": "한글"}, {"a": 2}], read_jsonl(bom)
     i = new_id("P")
     assert i.startswith("P-") and len(i) == 8, i
 
@@ -334,6 +337,8 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
 
 
 def check_roundtrip(tmp: Path, data: Path) -> None:
+    import contextlib
+    import io
     import json
     import pipeline
     HP = "P-ab12cd"  # a human control problem: it has no solutions and its note names the source
@@ -363,9 +368,15 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
                  "correctness": 9, "clarity_sol": 3, "understandable": None})
     f = tmp / "human.json"
     f.write_text(json.dumps(rows), encoding="utf-8")
-    assert pipeline.import_human(data, f) == 11, "10 problem rows (the duplicate collapsed) + 1 solution row; R9 skipped"
-    assert pipeline.import_human(data, f) == 11
-    human = [r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "human"]
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert pipeline.import_human(data, f) == 11, "10 problem rows (the duplicate collapsed) + 1 solution row; R9 skipped"
+    assert "import-human: 11 new, 0 replaced" in buf.getvalue(), buf.getvalue()
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert pipeline.import_human(data, f) == 11
+    assert "import-human: 0 new, 11 replaced" in buf.getvalue(), buf.getvalue()
+    human =[r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "human"]
     assert len(human) == 11, "re-import must overwrite, not duplicate"
     by_id = {r["target_id"]: r for r in human if r["target_type"] == "problem"}
     assert by_id[blind["problems"][0]["id"]]["clarity"] is None, "JSON true must not count as score 1"
@@ -393,6 +404,18 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
             assert not (d / "blind.json").exists(), f"{name}: a refused export must not write blind.json"
         else:
             raise AssertionError(f"export_human must refuse case {name!r}")
+    # a row whose target is not in blind.json (stale export) is kept but warned about
+    d = tmp / "stale" / "data"
+    append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})
+    pipeline.export_human(d, ["R1"])
+    g = tmp / "stale.json"
+    g.write_text(json.dumps([{"rater": "R1", "target_type": "problem", "target_id": i, "clarity": 3}
+                             for i in ("P-0e0e0e", "P-ffffff")]), encoding="utf-8")
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        assert pipeline.import_human(d, g) == 2
+    assert "'P-ffffff'" in buf.getvalue() and "'P-0e0e0e'" not in buf.getvalue(), buf.getvalue()
+    assert len(read_jsonl(d / "ratings.jsonl")) == 2
     # the page template gets the JSON with every '<' escaped, so no payload text can close the script tag
     d = tmp / "tpl" / "data"
     append_jsonl(d / "problems.jsonl", {"id": "P-0d0d0d", "statement": "x </script><!-- y"})

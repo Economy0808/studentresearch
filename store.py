@@ -18,7 +18,8 @@ def read_jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
     # split("\n"), not splitlines(): ensure_ascii=False writes U+2028/U+2029/U+0085 raw and splitlines() would cut rows there
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()]
+    # utf-8-sig: hand-edited files saved by PowerShell/Notepad carry a BOM
+    return [json.loads(line) for line in path.read_text(encoding="utf-8-sig").split("\n") if line.strip()]
 
 
 def append_jsonl(path: Path, row: dict) -> None:
