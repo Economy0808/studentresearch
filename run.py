@@ -46,6 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("solve", help="every problem (incl. human_problems.jsonl) × every model")
     sub.add_parser("eval", help="AI raters score every problem and solution, one item per call")
     sub.add_parser("verify", help="run REVIEWED checkers on submitted candidates")
+    e = sub.add_parser("export-human", help="write data/blind.json (+ eval_page/index.html if template exists)")
+    e.add_argument("--raters", default="R1,R2,R3,R4,R5", help="allowed evaluator codes")
+    i = sub.add_parser("import-human", help="merge a JSON file downloaded from the evaluation page")
+    i.add_argument("file", type=Path)
     sub.add_parser("probe", help="one tiny live call per model; checks auth, aliases and leaked context")
     sub.add_parser("selfcheck", help="run the offline self-check")
     return ap
@@ -69,6 +73,10 @@ def main(argv=None) -> None:
             report(a, pipeline.eval_ai(a.data_dir, models, a.dry_run))
         elif a.cmd == "verify":
             report(a, pipeline.verify(a.data_dir))
+        elif a.cmd == "export-human":
+            print(pipeline.export_human(a.data_dir, [r.strip() for r in a.raters.split(",") if r.strip()]))
+        elif a.cmd == "import-human":
+            report(a, pipeline.import_human(a.data_dir, a.file))
         elif a.cmd == "probe":
             probe(models, a.data_dir, a.dry_run)
         elif a.cmd == "selfcheck":

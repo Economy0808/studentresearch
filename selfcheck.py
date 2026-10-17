@@ -304,8 +304,36 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
     assert got == {"P-crash": "error", "P-slow": "error", "P-miss": "error", "P-na": "na", "P-pexit": "error"}, got
 
 
+def check_roundtrip(tmp: Path, data: Path) -> None:
+    import json
+    import pipeline
+    out = pipeline.export_human(data, ["R1", "R2"])
+    text = out.read_text(encoding="utf-8")
+    blind = json.loads(text)
+    assert len(blind["problems"]) == 9 and all(len(p["solutions"]) == 3 for p in blind["problems"])
+    for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"gen_key"', '"kind"'):
+        assert leak not in text, f"blind.json leaks {leak}"
+    assert "채점표" in blind["rubric_md"] and blind["raters"] == ["R1", "R2"]
+    rows = [{"rater": "R1", "target_type": "problem", "target_id": p["id"], "clarity": 4, "difficulty": None,
+             "want_to_solve": 2, "richness_list": ["x"], "known_problem": False, "source_guess": "ai_mid"}
+            for p in blind["problems"]]
+    rows.append({"rater": "R9", "target_type": "problem", "target_id": blind["problems"][0]["id"], "clarity": 1})
+    rows.append({"rater": "R1", "target_type": "solution", "target_id": blind["problems"][0]["solutions"][0]["id"],
+                 "correctness": 9, "clarity_sol": 3, "understandable": None})
+    f = tmp / "human.json"
+    f.write_text(json.dumps(rows), encoding="utf-8")
+    assert pipeline.import_human(data, f) == 10, "9 problem rows + 1 solution row; R9 skipped"
+    assert pipeline.import_human(data, f) == 10
+    human = [r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "human"]
+    assert len(human) == 10, "re-import must overwrite, not duplicate"
+    sol = next(r for r in human if r["target_type"] == "solution")
+    assert sol["correctness"] is None, "out-of-range score becomes null"
+    assert all(r["source_guess"] in ("ai_mid", None) for r in human)
+    assert len([r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "ai"]) == 108
+
+
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
-          check_eval, check_verify, check_verify_errors]
+          check_eval, check_verify, check_verify_errors, check_roundtrip]
 
 
 def main() -> None:
