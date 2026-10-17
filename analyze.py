@@ -15,7 +15,7 @@ from store import now, read_jsonl
 
 PROBLEM_ITEMS = ["clarity", "difficulty", "richness", "want_to_solve"]
 SOLUTION_ITEMS = ["correctness", "clarity_sol"]
-NULLABLE = {"problem": ["clarity", "difficulty", "want_to_solve"],
+NULLABLE = {"problem": ["clarity", "difficulty", "want_to_solve", "known_problem"],
             "solution": ["correctness", "clarity_sol", "understandable"]}
 
 
@@ -24,6 +24,8 @@ def load(data_dir: Path):
     S = pd.DataFrame(read_jsonl(data_dir / "solutions.jsonl"))
     R = pd.DataFrame(read_jsonl(data_dir / "ratings.jsonl"))
     V = pd.DataFrame(read_jsonl(data_dir / "verifications.jsonl"))
+    if not V.empty:
+        V = V.drop_duplicates("solution_id", keep="last")
     if R.empty:
         raise SystemExit("no ratings yet; run eval or import-human first")
     R["richness"] = R["richness_list"].apply(lambda x: len(x) if isinstance(x, list) else None) if "richness_list" in R else None
@@ -69,17 +71,19 @@ def kruskal(R):
 
 
 def success(S, V, R):
-    """Per solution: 1.0/0.0/NaN. A pass/fail verdict decides; otherwise claimed solved AND mean correctness ≥ 4
-    (that mean includes the solver's own rater; see metrics.md)."""
+    """Per solution: 1.0/0.0/NaN. A pass/fail verdict decides, 'na' (no candidate submitted) is a failure; otherwise
+    claimed solved AND mean AI correctness ≥ 4, counting only AI raters other than the solver itself."""
     S = S.copy()
     v = V.set_index("solution_id")["verdict"] if not V.empty else pd.Series(dtype=object)
-    sol = R[R.target_type == "solution"].reindex(columns=["target_id", "correctness"])
+    sol = R[(R.target_type == "solution") & (R.rater_type == "ai") & (R["rater"] != R["actor"])].reindex(columns=["target_id", "correctness"])
     corr = sol.groupby("target_id")["correctness"].mean()
 
     def f(s):
         vd = v.get(s["id"])
         if vd in ("pass", "fail"):
             return float(vd == "pass")
+        if vd == "na":
+            return 0.0
         c = corr.get(s["id"], float("nan"))
         if pd.isna(c):
             return float("nan")
@@ -90,14 +94,16 @@ def success(S, V, R):
     return S
 
 
-def ladder_ceiling(S):
+def ladder_ceiling(S, P):
+    """Per (generator, kind): checkable problems are scored by their checker, open ones by AI correctness, so they are not pooled."""
     S = S[S["source"].isin(llm.GRADE)].copy()
     S["solver_grade"] = S["solver"].map(llm.GRADE)
+    S["kind"] = S["problem_id"].map(P.set_index("id")["kind"])
     rows = []
-    for g, grp in S.groupby("source"):
+    for (g, kind), grp in S.groupby(["source", "kind"]):
         gg = llm.GRADE[g]
         own, up, low = grp[grp.solver == g].success, grp[grp.solver_grade > gg].success, grp[grp.solver_grade < gg].success
-        rows.append({"generator": g, "self_success": own.mean(), "n_self": int(own.notna().sum()),
+        rows.append({"generator": g, "kind": kind, "self_success": own.mean(), "n_self": int(own.notna().sum()),
                      "upper_success": up.mean(), "n_upper": int(up.notna().sum()),
                      "lower_success": low.mean(), "n_lower": int(low.notna().sum()),
                      "ladder": up.mean() - own.mean(), "ceiling": low.mean(), "n_verified": int(grp.verified.sum())})
@@ -105,7 +111,8 @@ def ladder_ceiling(S):
 
 
 def cannot_judge(R):
-    """Human raters' null share by target type and generator, per item and overall; grade vs per-rating null share."""
+    """Human raters' null share by target type and author, per item and overall; grade vs per-rating null share.
+    `actor` is the author of the target: the generator for problems, the solver for solutions."""
     hum = R[R.rater_type == "human"]
     rows, rhos = [], {}
     for tt, cols in NULLABLE.items():
@@ -113,16 +120,16 @@ def cannot_judge(R):
         if sub.empty:
             continue
         sub = sub.reindex(columns=list(sub.columns.union(cols)))
-        for src, grp in sub.groupby("source"):
+        for act, grp in sub.groupby("actor"):
             per_item = grp[cols].isna().mean()
-            rows.append({"target_type": tt, "source": src, "n_ratings": len(grp),
+            rows.append({"target_type": tt, "actor": act, "n_ratings": len(grp),
                          "cannot_judge_rate": round(float(grp[cols].isna().values.mean()), 3),
                          **{f"cj_{c}": round(float(per_item[c]), 3) for c in cols}})
-        graded = sub[sub["source"].isin(llm.GRADE)]
+        graded = sub[sub["actor"].isin(llm.GRADE)]
         if len(graded) >= 3:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                rhos[tt] = (stats.spearmanr(graded["source"].map(llm.GRADE), graded[cols].isna().mean(axis=1)), len(graded))
+                rhos[tt] = (stats.spearmanr(graded["actor"].map(llm.GRADE), graded[cols].isna().mean(axis=1)), len(graded))
     return pd.DataFrame(rows), rhos
 
 
@@ -168,15 +175,25 @@ def kendall_w(R):
 
 
 def self_preference(R):
-    ai = R[(R.rater_type == "ai") & R["actor"].isin(llm.GRADE)]
+    """bias = (mean deviation of a rater's score on its OWN work) − (same on others' work), where deviation is the score
+    minus the mean of the OTHER AI raters on the same target. NaN when no other AI rater scored that target."""
+    ai = R[(R.rater_type == "ai") & R["actor"].isin(llm.GRADE)].copy()
     rows = []
-    for rater, grp in ai.groupby("rater"):
-        for tt, items in (("problem", PROBLEM_ITEMS), ("solution", SOLUTION_ITEMS)):
-            sub = grp[grp.target_type == tt]
-            if sub.empty:
-                continue
-            own, other = sub[sub.actor == rater][items].mean(), sub[sub.actor != rater][items].mean()
-            rows.append({"rater": rater, "target_type": tt, **{f"bias_{it}": round(own[it] - other[it], 3) for it in items}})
+    for tt, items in (("problem", PROBLEM_ITEMS), ("solution", SOLUTION_ITEMS)):
+        sub = ai[ai.target_type == tt].reindex(columns=list(ai.columns.union(items)))
+        if sub.empty:
+            continue
+        for it in items:
+            sub[it] = pd.to_numeric(sub[it], errors="coerce")
+            # deviation of each rating from the mean of the OTHER AI raters on the same target
+            g = sub.groupby("target_id")[it]
+            total, cnt = g.transform("sum"), g.transform("count")
+            others_mean = (total - sub[it]) / (cnt - 1)
+            sub[f"dev_{it}"] = sub[it] - others_mean
+        for rater, grp in sub.groupby("rater"):
+            own, other = grp[grp.actor == rater], grp[grp.actor != rater]
+            rows.append({"rater": rater, "target_type": tt, "n_own": len(own), "n_other": len(other),
+                         **{f"bias_{it}": round(float(own[f"dev_{it}"].mean() - other[f"dev_{it}"].mean()), 3) for it in items}})
     return pd.DataFrame(rows)
 
 
@@ -186,12 +203,13 @@ def main(data_dir: Path = Path("data"), out: Path = Path("results")) -> dict:
     S = success(S, V, R) if not S.empty else S
     cj, rhos = cannot_judge(R)
     tables = {"q_g": q_g(R), "kruskal": kruskal(R),
-              "ladder_ceiling": ladder_ceiling(S) if not S.empty else pd.DataFrame(),
+              "ladder_ceiling": ladder_ceiling(S, P) if not S.empty else pd.DataFrame(),
               "cannot_judge": cj, "human_ai_agreement": human_ai_agreement(R),
               "kendall_w": kendall_w(R), "self_preference": self_preference(R)}
     md = ["# Metrics", f"generated {now()}", "",
-          "success for unverified solutions = claimed_status solved AND mean correctness >= 4 (see n_verified).",
-          "mean correctness used for success includes the solver's own rater; see self_preference for the bias.", ""]
+          "success for unverified solutions = claimed_status solved AND mean AI correctness >= 4 (see n_verified);",
+          "the solver's own rating is excluded from that mean; a verdict 'na' (no candidate) counts as failure.",
+          "ladder_ceiling is split by problem kind: checkable problems are scored by their checker, open ones by AI ratings.", ""]
     for name, df in tables.items():
         df.to_csv(out / f"{name}.csv", index=(name == "q_g"), encoding="utf-8")
         md += [f"## {name}", df.to_string() if not df.empty else "_no data_", ""]

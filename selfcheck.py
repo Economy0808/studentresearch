@@ -477,24 +477,39 @@ def check_analyze(tmp: Path, data: Path) -> None:
     f2 = tmp / "human_r2.json"
     f2.write_text(json.dumps(r2), encoding="utf-8")
     assert pipeline.import_human(data, f2) == len(blind["problems"])
+    # the human control problem (written by check_roundtrip) is now solved and rated like any other
+    assert pipeline.solve(data, dry_run=True) == 3
+    assert pipeline.eval_ai(data, dry_run=True) == 3 + 9, "1 human problem x 3 raters + 3 new solutions x 3 raters"
+    hp = next(p for p in pipeline.all_problems(data) if p["source"] == "human")
+    for stage in ("solve", "eval"):
+        files = sorted((data / "raw" / stage).glob(f"{hp['id']}_*.json"))
+        assert len(files) == 3, files
+        assert len({json.loads(f.read_text(encoding="utf-8"))["prompt"] for f in files}) == 1, \
+            f"{stage}: the three models must receive byte-identical prompts for one problem"
     opus_checkable = next(p for p in read_jsonl(data / "problems.jsonl") if p["kind"] == "checkable" and p["source"] == "opus")
     some_sol = next(s for s in read_jsonl(data / "solutions.jsonl") if s["problem_id"] == opus_checkable["id"])
-    append_jsonl(data / "verifications.jsonl", {"solution_id": some_sol["id"], "problem_id": opus_checkable["id"], "verdict": "error", "log": "fixture", "created_at": "2026-10-18T00:00:00+00:00"})
+    for log in ("fixture", "fixture, written twice"):  # a duplicated verification row must not break analysis (load keeps the last)
+        append_jsonl(data / "verifications.jsonl", {"solution_id": some_sol["id"], "problem_id": opus_checkable["id"], "verdict": "error", "log": log, "created_at": "2026-10-18T00:00:00+00:00"})
     t = analyze.main(data, tmp / "results")
     ai = t["q_g"].loc["ai"]
     assert [ai.loc[s, "richness"] for s in ("sonnet", "opus", "fable")] == [1.0, 2.0, 3.0], ai
-    lad = t["ladder_ceiling"].set_index("generator")
-    assert lad.loc["sonnet", "ladder"] == 1.0, lad
-    assert lad.loc["fable", "ladder"] != lad.loc["fable", "ladder"], "fable has no upper model → NaN"
-    assert set(t["self_preference"]["rater"]) == {"sonnet", "opus", "fable"}
+    lad = t["ladder_ceiling"].set_index(["generator", "kind"])
+    nan = lambda x: x != x
+    assert lad.loc[("sonnet", "checkable"), "ladder"] == 1.0 and int(lad.loc[("sonnet", "checkable"), "n_verified"]) == 3, lad
+    assert lad.loc[("sonnet", "open"), "ladder"] == 0.5, "opus 4.0 (success) and fable 3.5 (not), solver's own rating excluded"
+    assert nan(lad.loc[("fable", "checkable"), "ladder"]), "fable has no upper model → NaN"
+    assert int(lad.loc[("fable", "checkable"), "n_verified"]) == 3 and int(lad.loc[("opus", "checkable"), "n_verified"]) == 0, lad
+    sp = t["self_preference"]
+    assert set(sp["rater"]) == {"sonnet", "opus", "fable"}
+    assert (sp.filter(like="bias_").fillna(0).abs() < 1e-9).all().all(), sp  # fake raters score alike, so no self-preference
     assert (tmp / "results" / "metrics.md").exists() and (tmp / "results" / "q_g.csv").exists()
     assert not t["cannot_judge"].empty, "human ratings from check_roundtrip must appear"
-    lad = t["ladder_ceiling"].set_index("generator")
-    assert [int(lad.loc[g, "n_verified"]) for g in ("sonnet", "opus", "fable")] == [3, 0, 3], lad
     kw = t["kendall_w"]
     assert not kw.empty and kw["n_raters"].eq(2).all() and kw["kendall_W"].dropna().between(0, 1).all(), kw
     cj = t["cannot_judge"]
     assert "cj_difficulty" in cj and cj[cj.target_type == "problem"]["cj_difficulty"].eq(0.5).all(), cj  # R1 null, R2 = 2
+    assert cj[cj.target_type == "problem"]["cj_known_problem"].eq(0.5).all(), cj  # R1 false, R2 null
+    assert "actor" in cj and "source" not in cj, cj
     kr = t["kruskal"]
     assert kr[kr.rater_type == "ai"]["n_problems"].eq(9).all(), kr
 
