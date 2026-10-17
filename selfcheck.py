@@ -146,7 +146,54 @@ def check_prompts(tmp: Path, data: Path) -> None:
     assert "note" in row
 
 
-CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts]
+CONTEXT = """# Fake pack
+
+## Definitions
+fake
+
+## Result: A
+fake a
+
+## Result: B
+fake b
+
+## Format examples
+fake
+"""
+
+
+def check_gen(tmp: Path, data: Path) -> None:
+    import pipeline
+    ctx = tmp / "ctx.md"
+    ctx.write_text(CONTEXT, encoding="utf-8")
+    assert pipeline.parse_context(ctx)[1] == ["Result: A", "Result: B"]
+    n1 = pipeline.gen(data, ctx, "open", 2, dry_run=True)
+    n2 = pipeline.gen(data, ctx, "checkable", 1, dry_run=True)
+    assert (n1, n2) == (6, 3), (n1, n2)
+    assert pipeline.gen(data, ctx, "open", 2, dry_run=True) == 0, "gen must be idempotent"
+    probs = read_jsonl(data / "problems.jsonl")
+    assert len(probs) == 9
+    assert {p["focus"] for p in probs if p["kind"] == "open"} == {"Result: A", "Result: B"}
+    assert all(p["id"].startswith("P-") and p["source"] in ("sonnet", "opus", "fable") for p in probs)
+    assert all(p["checker_code"] is None for p in probs if p["kind"] == "open")
+    checkers = sorted((tmp / "checkers").glob("P-*.py"))
+    assert len(checkers) == 3, checkers
+    first = checkers[0].read_text(encoding="utf-8").splitlines()[0]
+    assert first.startswith("# UNREVIEWED"), first
+    raws = list((data / "raw" / "gen").glob("*.json"))
+    assert len(raws) == 9, len(raws)
+    assert pipeline.fill("a {x} b {y}", x="1", y=None) == "a 1 b "
+    fenced = tmp / "fenced.md"
+    fenced.write_text("# README\n\n```\n## Result: <x>\n```\n", encoding="utf-8")
+    try:
+        pipeline.parse_context(fenced)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("a '## Result:' line inside a code fence must not count as a section")
+
+
+CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen]
 
 
 def main() -> None:
