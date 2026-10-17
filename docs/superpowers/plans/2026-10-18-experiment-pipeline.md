@@ -1859,6 +1859,10 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 ---
 
+## Amendments during execution
+
+- **Task 2 (review round 1):** `STOP_MARKERS` narrowed to phrases ("usage limit", "rate limit", "authenticate", "oauth", "/login", "not logged in", "credit balance") and matched only against the CLI `result` text; `_cli` catches `OSError`, uses `errors="replace"`, and keeps `stdout`/`stderr`/`returncode` in the error dict; `claude_exe()` refuses a `.cmd`/extensionless shim when the native exe is missing; `fake()` answers the probe schema; `run.py` reconfigures stdout to UTF-8, validates `--models` against `llm.GRADE`, and its STOPPED message no longer assumes an auth cause; `selfcheck.py` gains `check_llm_errors` (negative/positive marker cases) and `check_cli_offline` (patched `subprocess.run` asserting the exact flags, stdin prompt, `_cwd`, and error mapping). The committed files are the source of truth for Task 2.
+
 ## Self-review (done by the plan author)
 
 - **Spec coverage:** §4 call layer → Task 2; §5 data model → Tasks 4–8 (fields match; `problems` has the extra `gen_key`, documented in Task 4's interface); §6 commands → Tasks 4–8 plus `probe`, `selfcheck`; §7 prompts → Task 3; §8 context pack → Tasks 3 (README) and 12; §9 page → Task 9 (db best-effort per the amended spec); §10 verify → Task 7; §11 analysis → Task 10; §12 error handling → `StopRun` in Task 2, `record_failure` in Task 4, import skips in Task 8, verify `error` verdicts in Task 7; §13 selfcheck → grows across Tasks 1–10; §14 limits → README in Task 11.
