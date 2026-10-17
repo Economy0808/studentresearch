@@ -174,7 +174,7 @@ solution_id, verdict  "pass" | "fail" | "error" | "na", log, created_at
 3. 모든 문제 종료 후 출처 추측 화면: 각 문제 `human/ai_low/ai_mid/ai_high/unknown`, 각 풀이 `ai_low/ai_mid/ai_high/unknown`. 건너뛰기 허용(본 자료 손실 방지).
 4. 완료 화면.
 
-저장: 항목마다 즉시 db `ratings` 컬렉션에 `doc_id = <rater>:<target_id>`로 저장(재접속 시 이어서). 백업으로 "내 응답 JSON 다운로드" 버튼. 관리자 코드로 들어가면 전체 응답 JSON 다운로드 가능 → `run.py import-human`.
+저장: 항목마다 즉시 브라우저 localStorage에 저장(같은 브라우저로 재접속 시 이어서). 완료 화면과 모든 화면 상단에 "내 응답 JSON 다운로드" 버튼 → 평가자가 파일을 연구자에게 보냄 → `run.py import-human`. Artifact db는 **보조**로만 쓴다: db 타입 정의상 공개 링크로 들어온 외부 평가자(연구자 개인 플랜 밖)는 db에 쓸 수 없으므로, `claude.use("db")`가 null이 아니고 쓰기가 성공할 때만 같은 레코드를 `ratings/<rater>:<target_id>`에 복제한다. 실패는 무시한다. 수집의 정본은 JSON 파일이다.
 
 렌더링: KaTeX(cdnjs)로 LaTeX 표시. 휴대폰 폭에서도 읽히는 단일 열 레이아웃.
 
