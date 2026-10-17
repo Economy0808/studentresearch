@@ -135,3 +135,44 @@ def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
                                     **{k: out[k] for k in SOLVE_PROPS}, "created_at": now()})
             made += 1
     return made
+
+
+def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
+    rubric = load_prompt("rubric.md")
+    t_prob = fill(load_prompt("eval_problem.md"), rubric=rubric)
+    t_sol = fill(load_prompt("eval_solution.md"), rubric=rubric)
+    ratings_path = data_dir / "ratings.jsonl"
+    done = {(r["rater"], r["target_type"], r["target_id"])
+            for r in read_jsonl(ratings_path) if r["rater_type"] == "ai"}
+    problems = {p["id"]: p for p in all_problems(data_dir)}
+    made = 0
+
+    def rate(model: str, target_type: str, target_id: str, prompt: str, props: dict) -> None:
+        nonlocal made
+        raw = data_dir / "raw" / "eval" / f"{target_id}_{model}.json"
+        try:
+            out = llm.call(model, system(), prompt, _schema(props), raw, dry_run)
+        except llm.CallFailed as e:
+            record_failure(data_dir, "eval", target_id, model, e)
+            return
+        append_jsonl(ratings_path, {"rater": model, "rater_type": "ai", "target_type": target_type,
+                                    "target_id": target_id, **{k: out[k] for k in props}, "created_at": now()})
+        made += 1
+
+    for p in problems.values():
+        prompt = fill(t_prob, statement=p["statement"], finite_form=p.get("finite_form"),
+                      why_important=p.get("why_important"))
+        for model in models:
+            if (model, "problem", p["id"]) not in done:
+                rate(model, "problem", p["id"], prompt, EVAL_PROBLEM_PROPS)
+    for s in read_jsonl(data_dir / "solutions.jsonl"):
+        p = problems.get(s["problem_id"])
+        if p is None:
+            continue
+        cand = s.get("candidate")
+        prompt = fill(t_sol, statement=p["statement"], finite_form=p.get("finite_form"), text=s["text"],
+                      candidate=json.dumps(cand, ensure_ascii=False) if cand is not None else None)
+        for model in models:
+            if (model, "solution", s["id"]) not in done:
+                rate(model, "solution", s["id"], prompt, EVAL_SOLUTION_PROPS)
+    return made

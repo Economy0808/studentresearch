@@ -246,7 +246,26 @@ def check_solve(tmp: Path, data: Path) -> None:
         assert leak not in __import__("json").loads(raw)["prompt"], f"solve prompt leaks {leak}"
 
 
-CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve]
+def check_eval(tmp: Path, data: Path) -> None:
+    import pipeline
+    assert pipeline.eval_ai(data, dry_run=True) == 9 * 3 + 27 * 3
+    assert pipeline.eval_ai(data, dry_run=True) == 0, "eval must be idempotent"
+    ratings = read_jsonl(data / "ratings.jsonl")
+    probs = {p["id"]: p for p in read_jsonl(data / "problems.jsonl")}
+    grade = {"sonnet": 1, "opus": 2, "fable": 3}
+    for r in ratings:
+        assert r["rater_type"] == "ai" and r["rater"] in grade
+        if r["target_type"] == "problem":
+            assert len(r["richness_list"]) == grade[probs[r["target_id"]]["source"]], r
+        else:
+            assert r["correctness"] == min(5, 2 + grade[r["rater"]]), r
+    raw = next((data / "raw" / "eval").glob("*.json")).read_text(encoding="utf-8")
+    prompt = __import__("json").loads(raw)["prompt"]
+    assert "채점표" in prompt and '"source"' not in prompt and "grounding" not in prompt
+
+
+CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
+          check_eval]
 
 
 def main() -> None:
