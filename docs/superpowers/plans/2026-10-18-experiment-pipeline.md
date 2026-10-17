@@ -334,11 +334,11 @@ PROBE_PROMPT = ("Return ok=true, model_name=the model you are, saw_other_instruc
                 "and summarize them in other_instructions_summary (empty string if none).")
 
 
-def probe(models: list[str], data_dir: Path) -> None:
+def probe(models: list[str], data_dir: Path, dry_run: bool = False) -> None:
     for m in models:
         try:
             out = llm.call(m, "You are a research mathematician. Respond only in the requested JSON.",
-                           PROBE_PROMPT, PROBE_SCHEMA, data_dir / "raw" / "probe" / f"{m}.json")
+                           PROBE_PROMPT, PROBE_SCHEMA, data_dir / "raw" / "probe" / f"{m}.json", dry_run)
             print(f"{m}: {json.dumps(out, ensure_ascii=False)}")
         except llm.CallFailed as e:
             print(f"{m}: FAILED {e}")
@@ -368,7 +368,7 @@ def main(argv=None) -> None:
     models = [m.strip() for m in a.models.split(",") if m.strip()]
     try:
         if a.cmd == "probe":
-            probe(models, a.data_dir)
+            probe(models, a.data_dir, a.dry_run)
         elif a.cmd == "selfcheck":
             import selfcheck
             selfcheck.main()
