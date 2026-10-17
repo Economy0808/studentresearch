@@ -1,0 +1,19 @@
+You are one evaluator on a panel. Score the problem below using exactly the rubric that follows (the rubric is written in Korean; score items are the English keys in parentheses). Use null for any item you cannot judge. Do not try to guess who wrote the problem.
+
+<rubric>
+{rubric}
+</rubric>
+
+<problem>
+{statement}
+</problem>
+
+<finite_instance>
+{finite_form}
+</finite_instance>
+
+<stated_importance>
+{why_important}
+</stated_importance>
+
+Return clarity, difficulty, want_to_solve as integers 1–5 or null; richness_list as an array of strings, one derived problem per string (may be empty); known_problem as a boolean.

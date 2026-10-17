@@ -118,7 +118,26 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         llm.subprocess.run, llm.claude_exe = real_run, real_exe
 
 
-CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline]
+def check_prompts(tmp: Path, data: Path) -> None:
+    root = Path(__file__).resolve().parent / "prompts"
+    need = {"system.md": [], "gen_open.md": ["{context}", "{focus}"],
+            "gen_checkable.md": ["{context}", "{focus}", "checker_code"],
+            "solve.md": ["{statement}", "{finite_form}", "{candidate_format}"],
+            "eval_problem.md": ["{rubric}", "{statement}", "{finite_form}", "{why_important}"],
+            "eval_solution.md": ["{rubric}", "{statement}", "{finite_form}", "{text}", "{candidate}"],
+            "rubric.md": ["clarity", "difficulty", "richness_list", "want_to_solve", "known_problem",
+                          "correctness", "clarity_sol", "understandable"]}
+    for name, tokens in need.items():
+        text = (root / name).read_text(encoding="utf-8")
+        for t in tokens:
+            assert t in text, f"{name} lacks {t}"
+    for name in ("solve.md", "eval_problem.md", "eval_solution.md"):
+        text = (root / name).read_text(encoding="utf-8")
+        for leak in ("{source}", "{solver}", "{grounding}", "{why_hard}"):
+            assert leak not in text, f"{name} must not reveal {leak}"
+
+
+CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts]
 
 
 def main() -> None:
