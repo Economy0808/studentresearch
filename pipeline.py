@@ -220,21 +220,34 @@ def verify(data_dir: Path, timeout: int = 60) -> int:
 
 
 def export_human(data_dir: Path, raters: list[str]) -> Path:
+    problems = all_problems(data_dir)
+    ids = [p["id"] for p in problems]
+    bad = [i for i in ids if not re.fullmatch(r"P-[0-9a-f]{6}", str(i))]
+    if bad or len(set(ids)) != len(ids):
+        raise SystemExit(f"export-human refused: problem ids must be unique and look like P-xxxxxx (6 hex); offending: {bad or 'duplicates'}. "
+                         "Generate ids with: python -c \"from store import new_id; print(new_id('P'))\"")
+    leaky = [p["id"] for p in problems if re.search(r"erdosproblems|https?://|problem\s*#?\s*\d+", p.get("why_important") or "", re.I)]
+    if leaky:
+        raise SystemExit(f"export-human refused: why_important names a source (erdosproblems/URL/'problem #N') in {leaky}; move it to the note field")
+    sols_all = read_jsonl(data_dir / "solutions.jsonl")
+    bad_s = [s["id"] for s in sols_all if not re.fullmatch(r"S-[0-9a-f]{6}", str(s["id"]))]
+    if bad_s:
+        raise SystemExit(f"export-human refused: solution ids must look like S-xxxxxx; offending: {bad_s}")
     sols: dict[str, list[dict]] = {}
-    for s in read_jsonl(data_dir / "solutions.jsonl"):
+    for s in sols_all:
         sols.setdefault(s["problem_id"], []).append({"id": s["id"], "text": s["text"], "candidate": s.get("candidate")})
     blind = {"generated_at": now(), "raters": raters, "rubric_md": load_prompt("rubric.md"),
              "problems": sorted([{"id": p["id"], "statement": p["statement"],
                                   "why_important": p.get("why_important") or "",
                                   "finite_form": p.get("finite_form"),
                                   "solutions": sols.get(p["id"], [])}
-                                 for p in all_problems(data_dir)], key=lambda x: x["id"])}
+                                 for p in problems], key=lambda x: x["id"])}
     out = data_dir / "blind.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(blind, ensure_ascii=False, indent=1), encoding="utf-8")
     tpl = data_dir.parent / "eval_page" / "template.html"
     if tpl.exists():
-        payload = json.dumps(blind, ensure_ascii=False).replace("</", "<\\/")
+        payload = json.dumps(blind, ensure_ascii=False).replace("<", "\\u003c")
         (tpl.parent / "index.html").write_text(tpl.read_text(encoding="utf-8").replace("/*BLIND_JSON*/", payload),
                                                encoding="utf-8")
     return out
@@ -248,35 +261,43 @@ GUESSES = {"human", "ai_low", "ai_mid", "ai_high", "unknown"}
 
 def _clean_field(k: str, v):
     if k in SCORE_FIELDS:
-        return v if isinstance(v, int) and 1 <= v <= 5 else None
+        return v if type(v) is int and 1 <= v <= 5 else None
     if k == "richness_list":
-        return [str(x).strip() for x in v if str(x).strip()] if isinstance(v, list) else []
+        return [x.strip() for x in v if isinstance(x, str) and x.strip()] if isinstance(v, list) else []
     if k in ("known_problem", "understandable"):
         return v if isinstance(v, bool) else None
     return v
 
 
 def import_human(data_dir: Path, path: Path) -> int:
+    blind_path = data_dir / "blind.json"
+    if not blind_path.exists():
+        raise SystemExit("run export-human first: data/blind.json not found")
     rows = json.loads(path.read_text(encoding="utf-8"))
     if isinstance(rows, dict):
         rows = rows.get("ratings", [])
-    allowed = set(json.loads((data_dir / "blind.json").read_text(encoding="utf-8"))["raters"])
-    clean = []
+    allowed = set(json.loads(blind_path.read_text(encoding="utf-8"))["raters"])
+    clean: dict[tuple, dict] = {}  # keyed so a duplicate row inside one file collapses; the last one wins
     for r in rows:
-        if r.get("rater") not in allowed:
+        if not isinstance(r, dict):
+            print("skip: row is not an object")
+            continue
+        if not isinstance(r.get("rater"), str) or r["rater"] not in allowed:
             print(f"skip: rater {r.get('rater')!r} is not in blind.json raters")
             continue
-        if r.get("target_type") not in HUMAN_FIELDS or not r.get("target_id"):
+        if (not isinstance(r.get("target_type"), str) or r["target_type"] not in HUMAN_FIELDS
+                or not isinstance(r.get("target_id"), str) or not r["target_id"]):
             print(f"skip: malformed row {str(r)[:120]}")
             continue
         row = {"rater": r["rater"], "rater_type": "human", "target_type": r["target_type"], "target_id": r["target_id"]}
         for k in HUMAN_FIELDS[r["target_type"]]:
             row[k] = _clean_field(k, r.get(k))
-        row["source_guess"] = r.get("source_guess") if r.get("source_guess") in GUESSES else None
-        row["created_at"] = r.get("created_at") or now()
-        clean.append(row)
+        row["source_guess"] = r["source_guess"] if isinstance(r.get("source_guess"), str) and r["source_guess"] in GUESSES else None
+        row["created_at"] = r.get("created_at") if isinstance(r.get("created_at"), str) and r.get("created_at") else now()
+        clean[(row["rater"], row["target_type"], row["target_id"])] = row
+    keys = set(clean)
+    clean = list(clean.values())
     ratings_path = data_dir / "ratings.jsonl"
-    keys = {(c["rater"], c["target_type"], c["target_id"]) for c in clean}
     kept = [e for e in read_jsonl(ratings_path)
             if not (e["rater_type"] == "human" and (e["rater"], e["target_type"], e["target_id"]) in keys)]
     write_jsonl(ratings_path, kept + clean)

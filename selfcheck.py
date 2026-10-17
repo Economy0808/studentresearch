@@ -17,6 +17,7 @@ def check_store(tmp: Path, data: Path) -> None:
     assert "한글" in p.read_text(encoding="utf-8"), "must not escape non-ASCII"
     write_jsonl(p, [{"a": 3}])
     assert read_jsonl(p) == [{"a": 3}]
+    assert not list(p.parent.glob("*.tmp")), "write_jsonl must leave no temp file behind (atomic replace)"
     assert read_jsonl(tmp / "missing.jsonl") == []
     i = new_id("P")
     assert i.startswith("P-") and len(i) == 8, i
@@ -148,7 +149,7 @@ def check_prompts(tmp: Path, data: Path) -> None:
         for leak in ("source", "solver", "grounding", "why_hard", "gen_key"):
             assert "{" + leak + "}" not in text, f"{name} must not reveal {leak}"
     row = json.loads((root / "human_problems.example.jsonl").read_text(encoding="utf-8").strip())
-    assert row["source"] == "human" and row["id"].startswith("P-h"), row
+    assert row["source"] == "human" and re.fullmatch(r"P-[0-9a-f]{6}", row["id"]), row
     assert "erd" not in row["why_important"].lower() and "http" not in row["why_important"].lower(), "why_important must not name the source"
     assert "note" in row
 
@@ -307,29 +308,71 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
 def check_roundtrip(tmp: Path, data: Path) -> None:
     import json
     import pipeline
+    HP = "P-ab12cd"  # a human control problem: it has no solutions and its note names the source
+    write_jsonl(data.parent / "human_problems.jsonl", [
+        {"id": HP, "source": "human", "kind": "open", "context_id": None, "focus": None,
+         "statement": "Human control problem $x$", "grounding": None, "why_hard": None,
+         "why_important": "Would settle a basic question.", "resembles_known": None, "novelty_confidence": None,
+         "finite_form": None, "candidate_format": None, "checker_code": None,
+         "note": "Erdős problem #1, erdosproblems.com/1", "created_at": "2026-10-18T00:00:00+00:00"}])
     out = pipeline.export_human(data, ["R1", "R2"])
     text = out.read_text(encoding="utf-8")
     blind = json.loads(text)
-    assert len(blind["problems"]) == 9 and all(len(p["solutions"]) == 3 for p in blind["problems"])
-    for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"gen_key"', '"kind"'):
+    assert len(blind["problems"]) == 10 and all(len(p["solutions"]) == 3 for p in blind["problems"] if p["id"] != HP)
+    for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"gen_key"', '"kind"', '"note"', "erdosproblems"):
         assert leak not in text, f"blind.json leaks {leak}"
     assert "채점표" in blind["rubric_md"] and blind["raters"] == ["R1", "R2"]
     rows = [{"rater": "R1", "target_type": "problem", "target_id": p["id"], "clarity": 4, "difficulty": None,
              "want_to_solve": 2, "richness_list": ["x"], "known_problem": False, "source_guess": "ai_mid"}
             for p in blind["problems"]]
+    rows[0]["clarity"] = True  # JSON true is not a score
+    rows[2]["richness_list"] = ["x", 3, None, " y "]  # only strings survive, trimmed
+    rows.append(dict(rows[1], clarity=5))  # same (rater, type, id) twice in one file: the last one wins
     rows.append({"rater": "R9", "target_type": "problem", "target_id": blind["problems"][0]["id"], "clarity": 1})
-    rows.append({"rater": "R1", "target_type": "solution", "target_id": blind["problems"][0]["solutions"][0]["id"],
+    first_sol = next(p for p in blind["problems"] if p["solutions"])["solutions"][0]["id"]
+    rows.append({"rater": "R1", "target_type": "solution", "target_id": first_sol,
                  "correctness": 9, "clarity_sol": 3, "understandable": None})
     f = tmp / "human.json"
     f.write_text(json.dumps(rows), encoding="utf-8")
-    assert pipeline.import_human(data, f) == 10, "9 problem rows + 1 solution row; R9 skipped"
-    assert pipeline.import_human(data, f) == 10
+    assert pipeline.import_human(data, f) == 11, "10 problem rows (the duplicate collapsed) + 1 solution row; R9 skipped"
+    assert pipeline.import_human(data, f) == 11
     human = [r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "human"]
-    assert len(human) == 10, "re-import must overwrite, not duplicate"
+    assert len(human) == 11, "re-import must overwrite, not duplicate"
+    by_id = {r["target_id"]: r for r in human if r["target_type"] == "problem"}
+    assert by_id[blind["problems"][0]["id"]]["clarity"] is None, "JSON true must not count as score 1"
+    assert by_id[blind["problems"][1]["id"]]["clarity"] == 5, "last duplicate row wins"
+    assert by_id[blind["problems"][2]["id"]]["richness_list"] == ["x", "y"]
     sol = next(r for r in human if r["target_type"] == "solution")
     assert sol["correctness"] is None, "out-of-range score becomes null"
     assert all(r["source_guess"] in ("ai_mid", None) for r in human)
     assert len([r for r in read_jsonl(data / "ratings.jsonl") if r["rater_type"] == "ai"]) == 108
+    # export refuses anything that could reveal a source (own data dirs)
+    cases = {"hid": ({"id": "P-h00001", "statement": "s"}, None),
+             "dup": ({"id": "P-0a0a0a", "statement": "s"}, None),
+             "src": ({"id": "P-0b0b0b", "statement": "s", "why_important": "See Problem #12 on the site."}, None),
+             "sid": ({"id": "P-0c0c0c", "statement": "s"}, {"id": "S-opus", "problem_id": "P-0c0c0c", "text": "t"})}
+    for name, (prob, sol_row) in cases.items():
+        d = tmp / "leak" / name / "data"
+        append_jsonl(d / "problems.jsonl", prob)
+        if name == "dup":
+            append_jsonl(d / "problems.jsonl", prob)
+        if sol_row:
+            append_jsonl(d / "solutions.jsonl", sol_row)
+        try:
+            pipeline.export_human(d, ["R1"])
+        except SystemExit:
+            assert not (d / "blind.json").exists(), f"{name}: a refused export must not write blind.json"
+        else:
+            raise AssertionError(f"export_human must refuse case {name!r}")
+    # the page template gets the JSON with every '<' escaped, so no payload text can close the script tag
+    d = tmp / "tpl" / "data"
+    append_jsonl(d / "problems.jsonl", {"id": "P-0d0d0d", "statement": "x </script><!-- y"})
+    (tmp / "tpl" / "eval_page").mkdir(parents=True)
+    (tmp / "tpl" / "eval_page" / "template.html").write_text("<script>const B = /*BLIND_JSON*/;</script>", encoding="utf-8")
+    pipeline.export_human(d, ["R1"])
+    page = (tmp / "tpl" / "eval_page" / "index.html").read_text(encoding="utf-8")
+    payload = page[len("<script>const B = "):-len(";</script>")]
+    assert "<" not in payload and json.loads(payload)["problems"][0]["statement"] == "x </script><!-- y", page
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,

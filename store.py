@@ -1,6 +1,7 @@
 """JSONL storage helpers shared by every stage."""
 import datetime as _dt
 import json
+import os
 import secrets
 from pathlib import Path
 
@@ -28,4 +29,6 @@ def append_jsonl(path: Path, row: dict) -> None:
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8", newline="\n")
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8", newline="\n")
+    os.replace(tmp, path)
