@@ -1862,6 +1862,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ## Amendments during execution
 
 - **Task 2 (review round 1):** `STOP_MARKERS` narrowed to phrases ("usage limit", "rate limit", "authenticate", "oauth", "/login", "not logged in", "credit balance") and matched only against the CLI `result` text; `_cli` catches `OSError`, uses `errors="replace"`, and keeps `stdout`/`stderr`/`returncode` in the error dict; `claude_exe()` refuses a `.cmd`/extensionless shim when the native exe is missing; `fake()` answers the probe schema; `run.py` reconfigures stdout to UTF-8, validates `--models` against `llm.GRADE`, and its STOPPED message no longer assumes an auth cause; `selfcheck.py` gains `check_llm_errors` (negative/positive marker cases) and `check_cli_offline` (patched `subprocess.run` asserting the exact flags, stdin prompt, `_cwd`, and error mapping). The committed files are the source of truth for Task 2.
+- **Task 2 (review round 2):** `STOP_MARKERS` extended with the installed CLI's real strings ("you've hit your", "you've reached your", "usage credits", "extra usage", "spend limit", "invalid api key", "authentication error"); `llm.call` raises `CallFailed("answered by <ids>, not <alias>")` when `cli_output.modelUsage` names a model that does not contain the requested alias (the CLI can fall back to another model when a per-model limit is hit; such answers must never enter the data); `check_cli_offline` pins `errors="replace"`, `timeout`, and the mismatch guard.
 
 ## Self-review (done by the plan author)
 
