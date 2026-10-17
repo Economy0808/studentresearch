@@ -1,4 +1,4 @@
-You are one evaluator on a panel. Score the solution below to the given problem using exactly the rubric that follows (the rubric is written in Korean; score items are the English keys in parentheses). Use null for any item you cannot judge. Do not try to guess who wrote the solution.
+You are one evaluator on a panel. Score the solution below to the given problem using exactly the rubric that follows (the rubric is written in Korean; score items are the English keys in parentheses). Use null for any item you cannot judge.
 
 <rubric>
 {rubric}
@@ -20,4 +20,4 @@ You are one evaluator on a panel. Score the solution below to the given problem 
 {candidate}
 </submitted_candidate>
 
-Return correctness and clarity_sol as integers 1–5 or null; understandable as true, false, or null.
+Return correctness and clarity_sol as integers 1–5 or null; understandable as true, false, or null. When a finite instance is given, judge correctness against the finite instance; otherwise against the problem.

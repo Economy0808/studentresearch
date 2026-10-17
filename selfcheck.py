@@ -1,4 +1,6 @@
 """The one runnable check for the pipeline. `python selfcheck.py` exits non-zero on failure."""
+import json
+import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -119,22 +121,29 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
 
 
 def check_prompts(tmp: Path, data: Path) -> None:
-    root = Path(__file__).resolve().parent / "prompts"
-    need = {"system.md": [], "gen_open.md": ["{context}", "{focus}"],
-            "gen_checkable.md": ["{context}", "{focus}", "checker_code"],
-            "solve.md": ["{statement}", "{finite_form}", "{candidate_format}"],
-            "eval_problem.md": ["{rubric}", "{statement}", "{finite_form}", "{why_important}"],
-            "eval_solution.md": ["{rubric}", "{statement}", "{finite_form}", "{text}", "{candidate}"],
-            "rubric.md": ["clarity", "difficulty", "richness_list", "want_to_solve", "known_problem",
-                          "correctness", "clarity_sol", "understandable"]}
-    for name, tokens in need.items():
-        text = (root / name).read_text(encoding="utf-8")
-        for t in tokens:
-            assert t in text, f"{name} lacks {t}"
+    root = Path(__file__).resolve().parent
+    expected = {"system.md": set(), "gen_open.md": {"context", "focus"}, "gen_checkable.md": {"context", "focus"},
+                "solve.md": {"statement", "finite_form", "candidate_format"},
+                "eval_problem.md": {"rubric", "statement", "finite_form", "why_important"},
+                "eval_solution.md": {"rubric", "statement", "finite_form", "text", "candidate"},
+                "rubric.md": set()}
+    for name, want in expected.items():
+        text = (root / "prompts" / name).read_text(encoding="utf-8")
+        found = set(re.findall(r"\{([a-z_]+)\}", text))
+        assert found == want, f"{name}: placeholders {found} != {want}"
+    assert "checker_code" in (root / "prompts" / "gen_checkable.md").read_text(encoding="utf-8")
+    rubric = (root / "prompts" / "rubric.md").read_text(encoding="utf-8")
+    for key in ("(clarity,", "(difficulty,", "(richness_list)", "(want_to_solve,", "(known_problem,",
+                "(correctness,", "(clarity_sol,", "(understandable)"):
+        assert key in rubric, f"rubric.md lacks {key}"
     for name in ("solve.md", "eval_problem.md", "eval_solution.md"):
-        text = (root / name).read_text(encoding="utf-8")
-        for leak in ("{source}", "{solver}", "{grounding}", "{why_hard}"):
-            assert leak not in text, f"{name} must not reveal {leak}"
+        text = (root / "prompts" / name).read_text(encoding="utf-8")
+        for leak in ("source", "solver", "grounding", "why_hard", "gen_key"):
+            assert "{" + leak + "}" not in text, f"{name} must not reveal {leak}"
+    row = json.loads((root / "human_problems.example.jsonl").read_text(encoding="utf-8").strip())
+    assert row["source"] == "human" and row["id"].startswith("P-h"), row
+    assert "erd" not in row["why_important"].lower() and "http" not in row["why_important"].lower(), "why_important must not name the source"
+    assert "note" in row
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts]
