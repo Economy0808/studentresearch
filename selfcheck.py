@@ -319,6 +319,7 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
     text = out.read_text(encoding="utf-8")
     blind = json.loads(text)
     assert len(blind["problems"]) == 10 and all(len(p["solutions"]) == 3 for p in blind["problems"] if p["id"] != HP)
+    assert all([s["id"] for s in p["solutions"]] == sorted(s["id"] for s in p["solutions"]) for p in blind["problems"]), "solutions must be ordered by opaque id, not solver"
     for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"gen_key"', '"kind"', '"note"', "erdosproblems"):
         assert leak not in text, f"blind.json leaks {leak}"
     assert "채점표" in blind["rubric_md"] and blind["raters"] == ["R1", "R2"]

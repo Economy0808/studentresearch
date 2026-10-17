@@ -36,15 +36,16 @@ details pre{white-space:pre-wrap;font:inherit}
   try { BLIND = JSON.parse(document.getElementById('blind').textContent); } catch (e) { BLIND = null; }
   const app = document.getElementById('app');
   const $ = (tag, attrs = {}, ...kids) => { const el = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'class') el.className = v; else if (k.startsWith('on')) el.addEventListener(k.slice(2), v); else el.setAttribute(k, v); } for (const kid of kids) el.append(kid); return el; };
-  const mathBlock = (text) => { const d = $('div', { class: 'math' }); d.textContent = text || ''; queueMicrotask(() => { if (window.renderMathInElement) renderMathInElement(d, { delimiters: [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }], throwOnError: false }); }); return d; };
+  const DELIMS = [{ left: '$$', right: '$$', display: true }, { left: '$', right: '$', display: false }, { left: '\\(', right: '\\)', display: false }, { left: '\\[', right: '\\]', display: true }];
+  const mathBlock = (text) => { const d = $('div', { class: 'math' }); d.textContent = text || ''; queueMicrotask(() => { if (window.renderMathInElement) renderMathInElement(d, { delimiters: DELIMS, throwOnError: false }); }); return d; };
 
-  // deterministic shuffle seeded by the rater code (mulberry32 over a string hash)
+  // deterministic shuffle seeded by the rater code (xmur3-style string hash, iterated as the generator)
   const seeded = (str) => { let h = 1779033703 ^ str.length; for (const c of str) { h = Math.imul(h ^ c.charCodeAt(0), 3432918353); h = (h << 13) | (h >>> 19); } return () => { h = Math.imul(h ^ (h >>> 16), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); return ((h ^= h >>> 16) >>> 0) / 4294967296; }; };
   const shuffle = (arr, rnd) => { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; };
   const buildSteps = (code) => { const rnd = seeded(code); const steps = []; for (const p of shuffle([...BLIND.problems], rnd)) { steps.push({ type: 'problem', p }); for (const s of shuffle([...p.solutions], rnd)) steps.push({ type: 'solution', p, s }); } steps.push({ type: 'guess' }); steps.push({ type: 'done' }); return steps; };
 
   // state: {rater, idx, ratings: {"problem:P-x": row, "solution:S-y": row}}
-  const KEY = (code) => 'hakja:' + code;
+  const KEY = (code) => 'hakja:' + code + ':' + (BLIND && BLIND.generated_at || '');
   const load = (code) => { try { return JSON.parse(localStorage.getItem(KEY(code))) || null; } catch (e) { return null; } };
   const save = (state) => { try { localStorage.setItem(KEY(state.rater), JSON.stringify(state)); } catch (e) { /* storage unavailable: the download is the record */ } };
   let dbp = null; // best-effort mirror; the JSON download is the record
@@ -78,7 +79,7 @@ details pre{white-space:pre-wrap;font:inherit}
     app.append($('h1', {}, '문제·풀이 블라인드 평가'), $('div', { class: 'card' }, form), rubric());
   };
 
-  const commit = (row) => { state.ratings[row.target_type + ':' + row.target_id] = row; state.idx += 1; save(state); mirror(row); render(); window.scrollTo(0, 0); };
+  const commit = (row) => { const old = state.ratings[row.target_type + ':' + row.target_id]; if (old && old.source_guess != null) row.source_guess = old.source_guess; state.ratings[row.target_type + ':' + row.target_id] = row; state.idx += 1; save(state); mirror(row); render(); window.scrollTo(0, 0); };
 
   const renderProblem = ({ p }) => {
     const prev = state.ratings['problem:' + p.id];
@@ -108,7 +109,10 @@ details pre{white-space:pre-wrap;font:inherit}
     const S_OPTS = P_OPTS.filter(([v]) => v !== 'human');
     const rows = [];
     const list = $('div', {});
-    for (const p of BLIND.problems) { const sp = sel(P_OPTS); rows.push(['problem', p.id, sp]); list.append($('div', { class: 'card' }, $('div', { class: 'muted' }, '문제 ' + p.id), mathBlock(p.statement.slice(0, 240)), $('label', {}, '출처 추측: ', sp), ...p.solutions.map(s => { const ss = sel(S_OPTS); rows.push(['solution', s.id, ss]); return $('div', {}, $('span', { class: 'muted' }, '풀이 ' + s.id + ' '), $('label', {}, '출처 추측: ', ss)); }))); }
+    for (const st of steps) {
+      if (st.type === 'problem') { const sp = sel(P_OPTS); sp.value = (state.ratings['problem:' + st.p.id] || {}).source_guess || 'unknown'; rows.push(['problem', st.p.id, sp]); list.append($('div', { class: 'card' }, $('div', { class: 'muted' }, '문제 ' + st.p.id), mathBlock(st.p.statement.slice(0, 240)), $('label', {}, '출처 추측: ', sp))); }
+      else if (st.type === 'solution') { const ss = sel(S_OPTS); ss.value = (state.ratings['solution:' + st.s.id] || {}).source_guess || 'unknown'; rows.push(['solution', st.s.id, ss]); list.append($('div', { class: 'card' }, $('div', { class: 'muted' }, '풀이 ' + st.s.id + ' (문제 ' + st.p.id + ')'), mathBlock(st.s.text.slice(0, 160)), $('label', {}, '출처 추측: ', ss))); }
+    }
     const finish = (apply) => { if (apply) for (const [tt, id, s] of rows) { const r = state.ratings[tt + ':' + id]; if (r) r.source_guess = s.value; } state.idx += 1; save(state); render(); window.scrollTo(0, 0); };
     app.append(header('출처 추측 (선택)'), $('p', {}, '각 문제와 풀이를 누가 만들었을지 추측해 주세요. 건너뛰어도 됩니다.'), list, $('div', { class: 'bar' }, $('button', { onclick: () => finish(true) }, '저장하고 완료'), $('button', { class: 'secondary', onclick: () => finish(false) }, '건너뛰기')));
   };
@@ -116,6 +120,8 @@ details pre{white-space:pre-wrap;font:inherit}
   const renderDone = () => { app.append(header('완료'), $('div', { class: 'card' }, $('p', {}, '수고하셨습니다. 아래 버튼으로 응답 파일을 내려받아 연구자에게 보내 주세요.'), $('button', { onclick: download }, '내 응답 JSON 다운로드'), ' ', $('button', { class: 'secondary', onclick: () => { state.idx = 0; save(state); render(); } }, '처음부터 다시 보기'))); };
 
   render();
+  // KaTeX is deferred: if a screen was drawn before it loaded, typeset the math in place (render() would drop half-typed input)
+  window.addEventListener('load', () => { if (window.renderMathInElement) document.querySelectorAll('div.math').forEach(el => renderMathInElement(el, { delimiters: DELIMS, throwOnError: false })); });
 })();
 </script>
 </body>

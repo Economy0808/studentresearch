@@ -236,6 +236,8 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
     sols: dict[str, list[dict]] = {}
     for s in sols_all:
         sols.setdefault(s["problem_id"], []).append({"id": s["id"], "text": s["text"], "candidate": s.get("candidate")})
+    for v in sols.values():
+        v.sort(key=lambda x: x["id"])  # file order is solver order; blind.json must not carry it
     blind = {"generated_at": now(), "raters": raters, "rubric_md": load_prompt("rubric.md"),
              "problems": sorted([{"id": p["id"], "statement": p["statement"],
                                   "why_important": p.get("why_important") or "",
