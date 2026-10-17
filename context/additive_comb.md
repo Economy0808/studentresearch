@@ -37,12 +37,12 @@ Source: Pilatte, 2023, arXiv:2303.09659, Erdős #157.
 ## Result: An explicit economical additive basis
 Statement. There exist an explicit set $A\subseteq\mathbb N_0$ and absolute constants $C,c>0$ such that $A+A=\mathbb N_0$ and the number $\sigma_A(n)$ of representations $n=a+a'$ with $a,a'\in A$ satisfies $\sigma_A(n)\le C\,n^{c/\log\log n}$ for all sufficiently large $n$; in particular $\sigma_A(n)=n^{o(1)}$, i.e. $\sigma_A(n)=o(n^{\varepsilon})$ for every $\varepsilon>0$. (The existence of such a set was proved earlier by Erdős by probabilistic methods; the point is an explicit construction.)
 
-Proof idea. Write integers in the mixed radix system $(p_1^2,p_2^2,\dots)$ with primes $p_k\equiv3\pmod 8$ close to $k$, restrict the $k$-th digit to a modular additive basis of $\mathbb Z/p_k^2\mathbb Z$ with bounded representation counts (Ruzsa's construction), and count digit choices digit by digit to bound the number of representations.
+Proof idea. Write integers in the mixed radix system $(p_1^2,p_2^2,\dots)$ with primes $p_k\equiv3\pmod 8$ chosen as the least such prime in $[f(k),2f(k))$ for an increasing function $f$, restrict the $k$-th digit to a modular additive basis of $\mathbb Z/p_k^2\mathbb Z$ with bounded representation counts (Ruzsa's construction), and count digit choices digit by digit to bound the number of representations.
 
 Source: Jain, Pham, Sawhney and Zakharov, 2024, arXiv:2405.08650, Erdős #29.
 
 ## Result: A finite Sidon set that extends to no perfect difference set
-Statement. The Sidon set $\{1,2,4,8,13\}$ does not extend to a perfect difference set modulo any $v>0$. Hence the conjecture that every finite Sidon set $A\subset\mathbb N$ is contained in a perfect difference set (for instance, one modulo $p^2+p+1$ with $p$ prime) is false.
+Statement. Erdős conjectured that every finite Sidon set $A\subset\mathbb N$ extends to a perfect difference set modulo $p^2+p+1$ for some prime $p$. The Sidon set $\{1,2,4,8,13\}$ does not extend to a perfect difference set modulo any $v>0$, so it is a counterexample to this conjecture. (Hall had published an earlier, different counterexample, $\{1,3,9,10,13\}$, in 1947.)
 
 Proof idea. A perfect difference set $B$ modulo $v$ gives a cyclic projective plane with the polarity $x\leftrightarrow B-x$; Baer's parity results on its absolute points (the points $x$ with $2x\in B$) yield a contradiction for any $B$ containing $\{1,2,4,8,13\}$.
 
@@ -51,9 +51,9 @@ Source: Alexeev and Mixon, 2025, arXiv:2510.19804, Erdős #707.
 ## Result: Independence of three properties of order-2 bases
 Statement. For an asymptotic basis $A$ of order $2$ consider (P1) $r_A(n)\to\infty$; (P2) $A=B\cup C$ for disjoint asymptotic bases $B,C$ of order $2$; (P3) $A$ contains a minimal asymptotic basis of order $2$. Erdős and Nathanson proved that if $r_A(n)>C\log n$ for all large $n$, for a constant $C>1/\log(4/3)$, then (P2) and (P3) both hold. Larsen proved that for slower growth of $r_A$ the three properties are independent: for each of the eight possible true/false combinations of (P1), (P2), (P3) there is an asymptotic basis of order $2$ with exactly that combination.
 
-Proof idea. The bases are built inductively on exponentially growing intervals $[N_k,N_{k+1}]$ with $N_k=4^{k+1}$, using random three-way partitions of the integers and a selection mechanism that decides which eligible sets must be hit at each stage, so that representation counts are controlled.
+Proof idea. The bases are produced by a randomized iterative construction carried out inductively on exponentially growing intervals.
 
-Source: Larsen, 2026, arXiv:2603.03472, Erdős #868, #869, #871.
+Source: Larsen, 2026, arXiv:2603.03472, Erdős #869, #871 (the paper also answers the first question of Erdős #868; the $\epsilon\log n$ strengthening is in a separate preprint; #871 was first settled in an earlier note by the same author).
 
 ## Result: Colouring versus density for progression-free subsets
 Statement. For every integer $k\ge3$ and every real $\mu\in(0,\tfrac{k-1}{k})$ there is a set $X=X(k,\mu)\subseteq\mathbb N$ such that (i) every finite colouring of $X$ has a monochromatic $k$-term arithmetic progression, and (ii) every finite $Y\subseteq X$ has a subset $Z\subseteq Y$ with $|Z|\ge\mu|Y|$ containing no $k$-term arithmetic progression. The range of $\mu$ is sharp, since the theorem fails for $\mu>\tfrac{k-1}{k}$.
