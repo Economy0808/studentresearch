@@ -1,5 +1,6 @@
 """Model call layer: one function, two backends (Claude Code CLI or a deterministic fake)."""
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -23,6 +24,22 @@ class CallFailed(Exception):
     """One call failed; the caller records it in failures.jsonl and moves on."""
 
 
+# ponytail: crude breaker; per-model counters if one alias flaps
+_consecutive_failures = 0
+_CLI_VERSION = None
+
+
+def cli_version() -> str:
+    global _CLI_VERSION
+    if _CLI_VERSION is None:
+        try:
+            _CLI_VERSION = subprocess.run([claude_exe(), "--version"], capture_output=True, text=True, encoding="utf-8",
+                                          errors="replace", timeout=60).stdout.strip()
+        except Exception as e:  # noqa: BLE001 - diagnostic only
+            _CLI_VERSION = f"unknown ({e})"
+    return _CLI_VERSION
+
+
 def claude_exe() -> str:
     found = shutil.which("claude")
     if not found:
@@ -37,6 +54,7 @@ def claude_exe() -> str:
 
 
 def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry_run: bool = False) -> dict:
+    global _consecutive_failures
     started = now()
     if dry_run:
         out = fake(model, schema, prompt)
@@ -44,12 +62,16 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
         out = _cli(model, system, prompt, schema, raw_path.parent.parent / "_cwd")
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path.write_text(json.dumps({"model": model, "system": system, "prompt": prompt, "schema": schema,
-                                    "started_at": started, "finished_at": now(), "cli_output": out},
+                                    "started_at": started, "finished_at": now(),
+                                    "cli_version": None if dry_run else cli_version(), "cli_output": out},
                                    ensure_ascii=False, indent=1), encoding="utf-8")
     _raise_if_error(out)
-    used = [k for k in (out.get("modelUsage") or {}).keys()]
-    if used and not any(model in k.lower() for k in used):
-        raise CallFailed(f"answered by {used}, not {model}; discarded")
+    used = list(out.get("modelUsage") or {})
+    if not dry_run:
+        others = [k for k in used if any(m != model and m in k.lower() for m in GRADE)]
+        if others or not any(model in k.lower() for k in used):
+            raise StopRun(f"answered by {used or 'unknown model'}, not {model}; the CLI fell back or the alias is wrong — "
+                          "wait for the limit window or fix --models, then rerun")
     data = out.get("structured_output")
     if data is None:
         try:
@@ -61,16 +83,21 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
     missing = [k for k in schema.get("required", []) if k not in data]
     if missing:
         raise CallFailed(f"output missing required keys {missing}")
+    _consecutive_failures = 0
     return data
 
 
 def _raise_if_error(out: dict) -> None:
+    global _consecutive_failures
     if not out.get("is_error"):
         return
     msg = str(out.get("result") or "")
-    low = msg.lower()
+    low = msg.lower().replace("_", " ")  # API error types arrive as rate_limit_error, authentication_error
     if any(m in low for m in STOP_MARKERS):
         raise StopRun(msg)
+    _consecutive_failures += 1
+    if _consecutive_failures >= 5:
+        raise StopRun(f"5 consecutive failures; last: {msg}")
     raise CallFailed(msg or "CLI reported an error without a message")
 
 
@@ -83,9 +110,10 @@ def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
     cmd = [claude_exe(), "-p", "--model", model, "--output-format", "json",
            "--json-schema", json.dumps(schema), "--tools", "", "--system-prompt", system,
            "--setting-sources", "project", "--no-session-persistence"]
+    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}  # bill the Max plan, never the API
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", cwd=cwd, timeout=1800)
+                           errors="replace", cwd=cwd, timeout=1800, env=env)
     except subprocess.TimeoutExpired as e:
         return {"is_error": True, "result": "timeout after 1800s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
     except OSError as e:

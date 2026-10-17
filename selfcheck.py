@@ -44,6 +44,7 @@ def check_llm_dry(tmp: Path, data: Path) -> None:
 
 def check_llm_errors(tmp: Path, data: Path) -> None:
     import llm
+    llm._consecutive_failures = 0
     for msg in ("timeout after 1800s",
                 "empty stdout (exit 1); stderr tail: (node) MaxListenersExceededWarning: use setMaxListeners() to increase limit",
                 "non-JSON stdout (exit 0): <html>", "input length and max_tokens exceed context limit"):
@@ -53,12 +54,20 @@ def check_llm_errors(tmp: Path, data: Path) -> None:
             pass
         else:
             raise AssertionError(f"{msg!r} must raise CallFailed")
+    try:  # four failures so far: the fifth in a row stops the run
+        llm._raise_if_error({"is_error": True, "result": "timeout after 1800s"})
+    except llm.StopRun as e:
+        assert "5 consecutive failures" in str(e), e
+    else:
+        raise AssertionError("the fifth consecutive failure must raise StopRun")
+    llm._consecutive_failures = 0
     for msg in ("Failed to authenticate: OAuth session expired", "You've hit your usage limit",
                 "Rate limit reached for this plan", "Not logged in. Run /login",
                 "You've hit your session limit · resets 3pm",
                 "You've hit your Fable limit · continuing on Opus uses usage credits",
                 "You're out of usage credits", "You're out of extra usage",
-                "Invalid API key · Fix external API key", "Authentication error · Try again"):
+                "Invalid API key · Fix external API key", "Authentication error · Try again",
+                "rate_limit_error", "authentication_error"):
         try:
             llm._raise_if_error({"is_error": True, "result": msg})
         except llm.StopRun:
@@ -70,8 +79,10 @@ def check_llm_errors(tmp: Path, data: Path) -> None:
 def check_cli_offline(tmp: Path, data: Path) -> None:
     """Exercise _cli with subprocess.run patched: exact flags, stdin prompt, cwd, error mapping, raw log."""
     import json
+    import os
     import llm
     seen = {}
+    opus_ok = {"is_error": False, "structured_output": {"ok": True}, "modelUsage": {"claude-opus-5-5": {}}}
 
     class Done:
         def __init__(self, out, err="", rc=0):
@@ -79,14 +90,27 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
 
     def fake_run(cmd, **kw):
         seen["cmd"], seen["kw"] = cmd, kw
-        return Done(seen.pop("stdout_next", json.dumps({"is_error": False, "structured_output": {"ok": True}})))
+        return Done(seen.pop("stdout_next", json.dumps(opus_ok)))
 
-    real_run, real_exe = llm.subprocess.run, llm.claude_exe
-    llm.subprocess.run, llm.claude_exe = fake_run, lambda: "claude.exe"
+    def must_stop(raw_name, reply, want):
+        seen["stdout_next"] = json.dumps(reply)
+        try:
+            llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / raw_name)
+        except llm.StopRun as e:
+            assert want in str(e), e
+        else:
+            raise AssertionError(f"{raw_name}: an answer not from opus must raise StopRun")
+
+    real_run, real_exe, real_ver = llm.subprocess.run, llm.claude_exe, llm._CLI_VERSION
+    llm.subprocess.run, llm.claude_exe, llm._CLI_VERSION = fake_run, lambda: "claude.exe", "claude 9.9.9"
+    real_key = os.environ.get("ANTHROPIC_API_KEY")
+    os.environ["ANTHROPIC_API_KEY"] = "sk-selfcheck"
     try:
         out = llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {"ok": {"type": "boolean"}}},
                        tmp / "raw" / "t" / "live.json")
         assert out == {"ok": True}, out
+        assert "ANTHROPIC_API_KEY" not in seen["kw"]["env"], "the API key must not reach the CLI (Max plan, not API billing)"
+        assert json.loads((tmp / "raw" / "t" / "live.json").read_text(encoding="utf-8"))["cli_version"] == "claude 9.9.9"
         cmd = seen["cmd"]
         assert cmd[:4] == ["claude.exe", "-p", "--model", "opus"], cmd
         for flag, val in (("--output-format", "json"), ("--tools", ""), ("--system-prompt", "SYS"),
@@ -106,18 +130,17 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
             raise AssertionError("non-JSON stdout must raise CallFailed")
         logged = json.loads((tmp / "raw" / "t" / "bad.json").read_text(encoding="utf-8"))["cli_output"]
         assert logged["stdout"] == "not json" and logged["is_error"] is True, logged
-        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
-                                          "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 1}}})
-        try:
-            llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "wrong.json")
-        except llm.CallFailed as e:
-            assert "not opus" in str(e), e
-        else:
-            raise AssertionError("an answer from another model must raise CallFailed")
+        # a fallback to another model stops the whole run (live path only): wrong model, mixed, or no modelUsage at all
+        must_stop("wrong.json", {"is_error": False, "structured_output": {"ok": True},
+                                 "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 1}}}, "not opus")
+        must_stop("mixed.json", {"is_error": False, "structured_output": {"ok": True},
+                                 "modelUsage": {"claude-opus-5-5": {}, "claude-sonnet-5-5": {}}}, "not opus")
+        must_stop("nousage.json", {"is_error": False, "structured_output": {"ok": True}}, "unknown model")
         seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
                                           "modelUsage": {"claude-opus-5-5": {"inputTokens": 1}}})
         assert llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "right.json") == {"ok": True}
-        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"nope": 1}})
+        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"nope": 1},
+                                          "modelUsage": {"claude-opus-5-5": {}}})
         try:
             llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {"ok": {}}, "required": ["ok"]}, tmp / "raw" / "t" / "invalid.json")
         except llm.CallFailed as e:
@@ -125,7 +148,12 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         else:
             raise AssertionError("output missing a required key must raise CallFailed")
     finally:
-        llm.subprocess.run, llm.claude_exe = real_run, real_exe
+        llm.subprocess.run, llm.claude_exe, llm._CLI_VERSION = real_run, real_exe, real_ver
+        if real_key is None:
+            os.environ.pop("ANTHROPIC_API_KEY", None)
+        else:
+            os.environ["ANTHROPIC_API_KEY"] = real_key
+        llm._consecutive_failures = 0
 
 
 def check_prompts(tmp: Path, data: Path) -> None:
