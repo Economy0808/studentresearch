@@ -43,7 +43,6 @@ Create `selfcheck.py`:
 ```python
 """The one runnable check for the pipeline. `python selfcheck.py` exits non-zero on failure."""
 import shutil
-import sys
 import tempfile
 from pathlib import Path
 
@@ -51,10 +50,11 @@ from store import append_jsonl, new_id, read_jsonl, write_jsonl
 
 
 def check_store(tmp: Path, data: Path) -> None:
-    p = tmp / "x.jsonl"
+    p = data / "nested" / "x.jsonl"  # parent does not exist yet: exercises mkdir
     append_jsonl(p, {"a": 1, "k": "한글"})
-    append_jsonl(p, {"a": 2})
-    assert read_jsonl(p) == [{"a": 1, "k": "한글"}, {"a": 2}], read_jsonl(p)
+    append_jsonl(p, {"a": 2, "sep": "a b c\u0085d"})  # line separators must survive a round trip
+    assert read_jsonl(p) == [{"a": 1, "k": "한글"}, {"a": 2, "sep": "a b c\u0085d"}], read_jsonl(p)
+    assert b"\r\n" not in p.read_bytes(), "JSONL must use LF on every platform"
     assert "한글" in p.read_text(encoding="utf-8"), "must not escape non-ASCII"
     write_jsonl(p, [{"a": 3}])
     assert read_jsonl(p) == [{"a": 3}]
@@ -108,18 +108,19 @@ def new_id(prefix: str) -> str:
 def read_jsonl(path: Path) -> list[dict]:
     if not path.exists():
         return []
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    # split("\n"), not splitlines(): ensure_ascii=False writes U+2028/U+2029/U+0085 raw and splitlines() would cut rows there
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").split("\n") if line.strip()]
 
 
 def append_jsonl(path: Path, row: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as f:
+    with path.open("a", encoding="utf-8", newline="\n") as f:
         f.write(json.dumps(row, ensure_ascii=False) + "\n")
 
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+    path.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8", newline="\n")
 ```
 
 - [ ] **Step 4: Add the support files**
