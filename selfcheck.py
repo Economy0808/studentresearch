@@ -1,4 +1,5 @@
 """The one runnable check for the pipeline. `python selfcheck.py` exits non-zero on failure."""
+import hashlib
 import json
 import re
 import shutil
@@ -222,7 +223,9 @@ def check_gen(tmp: Path, data: Path) -> None:
     raws = list((data / "raw" / "gen").glob("*.json"))
     assert len(raws) == 9, len(raws)
     assert pipeline.fill("a {x} b {y}", x="1", y=None) == "a 1 b "
-    fenced = tmp / "fenced.md"
+    assert pipeline.fill("{text}", text="see {candidate}") == "see {candidate}", "inserted text must not be rescanned"
+    assert pipeline.fill("{a_{n}} {z}", z="1") == "{a_{n}} 1", "unknown tokens stay untouched"
+    fenced =tmp / "fenced.md"
     fenced.write_text("# README\n\n```\n## Result: <x>\n```\n", encoding="utf-8")
     try:
         pipeline.parse_context(fenced)
@@ -239,7 +242,10 @@ def check_gen(tmp: Path, data: Path) -> None:
         pass
     else:
         raise AssertionError("context/README.md has only fenced Result headings and must be rejected")
-    prompts = {json.loads((data / "raw" / "gen" / f"ctx_open_{m}_0.json").read_text(encoding="utf-8"))["prompt"] for m in ("sonnet", "opus", "fable")}
+    cid = "ctx-" + hashlib.sha256(ctx.read_text(encoding="utf-8").encode("utf-8")).hexdigest()[:8]
+    assert {p["context_id"] for p in probs} == {cid}, "context_id carries a hash of the pack text"
+    assert [p["source"] for p in probs[:6]] == ["sonnet", "opus", "fable"] * 2, "generation is item-major: a partial run stays balanced"
+    prompts = {json.loads((data / "raw" / "gen" / f"{cid}_open_{m}_0.json").read_text(encoding="utf-8"))["prompt"] for m in ("sonnet", "opus", "fable")}
     assert len(prompts) == 1, "the three models must receive byte-identical prompts"
     for p in probs:
         if p["kind"] == "checkable":
@@ -276,6 +282,18 @@ def check_solve(tmp: Path, data: Path) -> None:
     raw = next((data / "raw" / "solve").glob("*.json")).read_text(encoding="utf-8")
     for leak in ('"source"', "grounding", "gen_key"):
         assert leak not in __import__("json").loads(raw)["prompt"], f"solve prompt leaks {leak}"
+    # a claimed_status outside the enum is a recorded failure, not a solution row (own data dir)
+    d = tmp / "badsolve" / "data"
+    append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})
+    real_call = pipeline.llm.call
+    pipeline.llm.call = lambda *a, **kw: {"text": "t", "claimed_status": "maybe", "candidate": None}
+    try:
+        assert pipeline.solve(d, ["sonnet"], dry_run=True) == 0
+    finally:
+        pipeline.llm.call = real_call
+    fails = read_jsonl(d / "failures.jsonl")
+    assert len(fails) == 1 and "claimed_status out of range" in fails[0]["error"], fails
+    assert not (d / "solutions.jsonl").exists()
 
 
 def check_eval(tmp: Path, data: Path) -> None:
@@ -294,6 +312,18 @@ def check_eval(tmp: Path, data: Path) -> None:
     raw = next((data / "raw" / "eval").glob("*.json")).read_text(encoding="utf-8")
     prompt = __import__("json").loads(raw)["prompt"]
     assert "채점표" in prompt and '"source"' not in prompt and "grounding" not in prompt
+    # AI ratings are stored cleaned, like human ones: out-of-range or wrongly typed values become null (own data dir)
+    d = tmp / "badeval" / "data"
+    append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})
+    real_call = pipeline.llm.call
+    pipeline.llm.call = lambda *a, **kw: {"clarity": 9, "difficulty": 3, "want_to_solve": True,
+                                          "richness_list": ["x", 3, " y "], "known_problem": "no"}
+    try:
+        assert pipeline.eval_ai(d, ["sonnet"], dry_run=True) == 1
+    finally:
+        pipeline.llm.call = real_call
+    r = read_jsonl(d / "ratings.jsonl")[0]
+    assert (r["clarity"], r["difficulty"], r["want_to_solve"], r["richness_list"], r["known_problem"]) == (None, 3, None, ["x", "y"], None), r
 
 
 def check_verify(tmp: Path, data: Path) -> None:
@@ -324,7 +354,7 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
     import pipeline
     d = tmp / "verr" / "data"
     (tmp / "verr" / "checkers").mkdir(parents=True)
-    for pid, body in (("P-crash", "raise RuntimeError('boom')"), ("P-slow", "__import__('time').sleep(30)"),
+    for pid, body in (("P-crash", "raise RuntimeError('한글 boom')"), ("P-slow", "__import__('time').sleep(30)"),
                       ("P-pexit", "print('PASS')\n    raise SystemExit(1)")):  # prints PASS, then a non-zero exit: must not count as pass
         (tmp / "verr" / "checkers" / f"{pid}.py").write_text(f"# REVIEWED\ndef check(c):\n    {body}\n", encoding="utf-8")
     (tmp / "verr" / "checkers" / "P-empty.py").write_bytes(b"")  # zero bytes: no first line → not REVIEWED → skipped, never raises
@@ -334,6 +364,8 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
     assert pipeline.verify(d, timeout=3) == 5, "P-empty is skipped, the other five get a row"
     got = {v["problem_id"]: v["verdict"] for v in read_jsonl(d / "verifications.jsonl")}
     assert got == {"P-crash": "error", "P-slow": "error", "P-miss": "error", "P-na": "na", "P-pexit": "error"}, got
+    log = next(v["log"] for v in read_jsonl(d / "verifications.jsonl") if v["problem_id"] == "P-crash")
+    assert "한글 boom" in log, log  # child tracebacks are UTF-8 (-X utf8), not the console code page
 
 
 def check_roundtrip(tmp: Path, data: Path) -> None:
@@ -389,8 +421,10 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
     # export refuses anything that could reveal a source (own data dirs)
     cases = {"hid": ({"id": "P-h00001", "statement": "s"}, None),
              "dup": ({"id": "P-0a0a0a", "statement": "s"}, None),
-             "src": ({"id": "P-0b0b0b", "statement": "s", "why_important": "See Problem #12 on the site."}, None),
-             "sid": ({"id": "P-0c0c0c", "statement": "s"}, {"id": "S-opus", "problem_id": "P-0c0c0c", "text": "t"})}
+             "src": ({"id": "P-0b0b0b", "source": "human", "statement": "s", "why_important": "See Problem #12 on the site."}, None),
+             "src2": ({"id": "P-0b0c0c", "source": "human", "statement": "s", "why_important": "Item #7 of a famous list."}, None),
+             "sid": ({"id": "P-0c0c0c", "statement": "s"}, {"id": "S-opus", "problem_id": "P-0c0c0c", "text": "t"}),
+             "sdup": ({"id": "P-0d0d0d", "statement": "s"}, {"id": "S-0a0a0a", "problem_id": "P-0d0d0d", "text": "t"})}
     for name, (prob, sol_row) in cases.items():
         d = tmp / "leak" / name / "data"
         append_jsonl(d / "problems.jsonl", prob)
@@ -398,12 +432,18 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
             append_jsonl(d / "problems.jsonl", prob)
         if sol_row:
             append_jsonl(d / "solutions.jsonl", sol_row)
+        if name == "sdup":
+            append_jsonl(d / "solutions.jsonl", sol_row)
         try:
             pipeline.export_human(d, ["R1"])
         except SystemExit:
             assert not (d / "blind.json").exists(), f"{name}: a refused export must not write blind.json"
         else:
             raise AssertionError(f"export_human must refuse case {name!r}")
+    # the source check only applies to human rows: an AI-written why_important may mention "problem #3"
+    d = tmp / "leak" / "aiok" / "data"
+    append_jsonl(d / "problems.jsonl", {"id": "P-0f0f0f", "source": "opus", "statement": "s", "why_important": "Generalizes problem #3 of the pack."})
+    assert pipeline.export_human(d, ["R1"]).exists()
     # a row whose target is not in blind.json (stale export) is kept but warned about
     d = tmp / "stale" / "data"
     append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})

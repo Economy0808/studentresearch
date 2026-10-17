@@ -1,4 +1,5 @@
 """The experiment stages as pure functions over a data_dir. Project files hang off data_dir.parent."""
+import hashlib
 import json
 import re
 import subprocess
@@ -36,10 +37,9 @@ def load_prompt(name: str) -> str:
 
 
 def fill(template: str, **values) -> str:
-    """Replace {key} tokens one by one; str.format is avoided because LaTeX uses braces."""
-    for k, v in values.items():
-        template = template.replace("{" + k + "}", "" if v is None else str(v))
-    return template
+    """Replace {key} tokens in one pass (inserted text is never rescanned); unknown tokens stay; str.format is avoided because LaTeX uses braces."""
+    return re.sub(r"\{([a-z_]+)\}", lambda m: ("" if values.get(m.group(1)) is None else str(values[m.group(1)]))
+                  if m.group(1) in values else m.group(0), template)
 
 
 def system() -> str:
@@ -56,7 +56,12 @@ def parse_context(path: Path) -> tuple[str, list[str]]:
 
 
 def all_problems(data_dir: Path) -> list[dict]:
-    return read_jsonl(data_dir / "problems.jsonl") + read_jsonl(data_dir.parent / "human_problems.jsonl")
+    rows = read_jsonl(data_dir / "problems.jsonl") + read_jsonl(data_dir.parent / "human_problems.jsonl")
+    ids = [p["id"] for p in rows]
+    dup = sorted({i for i in ids if ids.count(i) > 1})
+    if dup:
+        raise SystemExit(f"duplicate problem ids across problems.jsonl and human_problems.jsonl: {dup}")
+    return rows
 
 
 def record_failure(data_dir: Path, stage: str, target_id: str, model: str, err: Exception) -> None:
@@ -68,14 +73,14 @@ def gen(data_dir: Path, context_path: Path, kind: str, n: int, models=llm.MODELS
     if kind not in ("open", "checkable"):
         raise ValueError(kind)
     text, results = parse_context(context_path)
-    context_id = context_path.stem
+    context_id = f"{context_path.stem}-{hashlib.sha256(text.encode('utf-8')).hexdigest()[:8]}"  # editing the pack restarts generation
     template = load_prompt(f"gen_{kind}.md")
     schema = _schema(GEN_PROPS | (CHECKABLE_PROPS if kind == "checkable" else {}))
     problems_path = data_dir / "problems.jsonl"
     done = {p.get("gen_key") for p in read_jsonl(problems_path)}
     made = 0
-    for model in models:
-        for i in range(n):
+    for i in range(n):  # item-major, so a partial run stays balanced across models
+        for model in models:
             key = f"{context_id}:{kind}:{model}:{i}"
             if key in done:
                 continue
@@ -131,6 +136,9 @@ def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
             except llm.CallFailed as e:
                 record_failure(data_dir, "solve", p["id"], model, e)
                 continue
+            if out["claimed_status"] not in SOLVE_PROPS["claimed_status"]["enum"]:
+                record_failure(data_dir, "solve", p["id"], model, ValueError("claimed_status out of range"))
+                continue
             append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
                                     **{k: out[k] for k in SOLVE_PROPS}, "created_at": now()})
             made += 1
@@ -156,7 +164,7 @@ def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
             record_failure(data_dir, "eval", target_id, model, e)
             return
         append_jsonl(ratings_path, {"rater": model, "rater_type": "ai", "target_type": target_type,
-                                    "target_id": target_id, **{k: out[k] for k in props}, "created_at": now()})
+                                    "target_id": target_id, **{k: _clean_field(k, out[k]) for k in props}, "created_at": now()})
         made += 1
 
     for p in problems.values():
@@ -205,7 +213,7 @@ def verify(data_dir: Path, timeout: int = 60) -> int:
             cand.write_text(json.dumps(s["candidate"], ensure_ascii=False), encoding="utf-8")
             try:
                 # ponytail: on Windows a grandchild process can hold the pipes past the timeout; reviewed checkers must not spawn processes
-                r = subprocess.run([sys.executable, "-I", str(runner), str(checker), str(cand)],
+                r = subprocess.run([sys.executable, "-I", "-X", "utf8", str(runner), str(checker), str(cand)],
                                    capture_output=True, text=True, encoding="utf-8", errors="replace",
                                    timeout=timeout, cwd=cand.parent)
                 last = r.stdout.strip().splitlines()[-1] if r.stdout.strip() else ""
@@ -226,10 +234,13 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
     if bad or len(set(ids)) != len(ids):
         raise SystemExit(f"export-human refused: problem ids must be unique and look like P-xxxxxx (6 hex); offending: {bad or 'duplicates'}. "
                          "Generate ids with: python -c \"from store import new_id; print(new_id('P'))\"")
-    leaky = [p["id"] for p in problems if re.search(r"erdosproblems|https?://|problem\s*#?\s*\d+", p.get("why_important") or "", re.I)]
+    leaky = [p["id"] for p in problems if p.get("source") == "human"
+             and re.search(r"erdosproblems|https?://|problem\s*#?\s*\d+|#\s*\d+", p.get("why_important") or "", re.I)]
     if leaky:
-        raise SystemExit(f"export-human refused: why_important names a source (erdosproblems/URL/'problem #N') in {leaky}; move it to the note field")
+        raise SystemExit(f"export-human refused: why_important names a source (erdosproblems/URL/'problem #N'/'#N') in {leaky}; move it to the note field")
     sols_all = read_jsonl(data_dir / "solutions.jsonl")
+    if len(set(s["id"] for s in sols_all)) != len(sols_all):
+        raise SystemExit("export-human refused: duplicate solution ids")
     bad_s = [s["id"] for s in sols_all if not re.fullmatch(r"S-[0-9a-f]{6}", str(s["id"]))]
     if bad_s:
         raise SystemExit(f"export-human refused: solution ids must look like S-xxxxxx; offending: {bad_s}")
