@@ -1747,6 +1747,8 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ## 1. 자료 준비
 - `context/<이름>.md` — 컨텍스트 팩. 규격은 `context/README.md`.
 - `human_problems.jsonl` — 인간 대조군 문제. `human_problems.example.jsonl`을 복사해 내용을 바꾼다. 컨텍스트 팩과 겹치지 않게.
+  - id는 평가자에게 보이므로 모델 문제와 같은 불투명 id를 쓴다: `python -c "from store import new_id; print(new_id('P'))"`.
+  - `why_important`도 평가자에게 보인다. 출처·문제 번호·URL은 쓰지 말고 `note` 필드에 적는다(`note`는 내보내지 않음). `export-human`이 위반을 발견하면 거부한다.
 
 ## 2. 실행 (모든 명령은 재실행 시 끝난 항목을 건너뜀)
 ```bash
@@ -1762,12 +1764,14 @@ python run.py eval
 ```bash
 python run.py verify
 ```
+체커를 고친 뒤 다시 검증하려면 `data/verifications.jsonl`에서 그 풀이의 행을 지우고 다시 실행한다(판정은 자동으로 갱신되지 않음). 검토한 체커는 외부 프로세스를 띄우지 않아야 한다.
 
 ## 4. 인간 평가
 ```bash
 python run.py export-human --raters R1,R2,R3
 ```
 → `eval_page/index.html`을 Artifact로 게시(또는 파일을 그대로 전달). 평가자는 코드를 입력해 평가하고 마지막에 `ratings_R1.json`을 내려받아 보낸다.
+배포 전에 export를 고정한다: `export-human`을 다시 돌리면 `generated_at`이 바뀌어 평가자의 진행 상태가 처음으로 돌아간다. 평가 중에는 다시 내보내지 않는다.
 ```bash
 python run.py import-human ratings_R1.json
 ```
