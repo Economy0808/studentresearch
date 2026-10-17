@@ -725,7 +725,7 @@ SOLVE_PROPS = {"text": _STR,
                "candidate": {"type": ["array", "object", "string", "number", "null"]}}
 EVAL_PROBLEM_PROPS = {"clarity": _SCORE, "difficulty": _SCORE, "want_to_solve": _SCORE,
                       "richness_list": {"type": "array", "items": _STR},
-                      "known_problem": {"type": "boolean"}}
+                      "known_problem": {"type": ["boolean", "null"]}}
 EVAL_SOLUTION_PROPS = {"correctness": _SCORE, "clarity_sol": _SCORE,
                        "understandable": {"type": ["boolean", "null"]}}
 
@@ -1233,9 +1233,7 @@ def _clean_field(k: str, v):
         return v if isinstance(v, int) and 1 <= v <= 5 else None
     if k == "richness_list":
         return [str(x).strip() for x in v if str(x).strip()] if isinstance(v, list) else []
-    if k == "known_problem":
-        return bool(v)
-    if k == "understandable":
+    if k in ("known_problem", "understandable"):
         return v if isinstance(v, bool) else None
     return v
 
@@ -1409,14 +1407,14 @@ details pre{white-space:pre-wrap;font:inherit}
 
   const renderProblem = ({ p }) => {
     const prev = state.ratings['problem:' + p.id];
-    const form = $('form', { onsubmit: (e) => { e.preventDefault(); commit({ rater: state.rater, target_type: 'problem', target_id: p.id, clarity: readScale(form, 'clarity'), difficulty: readScale(form, 'difficulty'), want_to_solve: readScale(form, 'want_to_solve'), richness_list: form.elements.richness.value.split('\n').map(s => s.trim()).filter(Boolean), known_problem: form.elements.known.checked, created_at: nowIso() }); } },
+    const form = $('form', { onsubmit: (e) => { e.preventDefault(); commit({ rater: state.rater, target_type: 'problem', target_id: p.id, clarity: readScale(form, 'clarity'), difficulty: readScale(form, 'difficulty'), want_to_solve: readScale(form, 'want_to_solve'), richness_list: form.elements.richness.value.split('\n').map(s => s.trim()).filter(Boolean), known_problem: form.elements.known.value === 'na' ? null : form.elements.known.value === 'yes', created_at: nowIso() }); } },
       scale('clarity', '명확성 (1~5)'), scale('difficulty', '난이도 (1~5)'),
       $('fieldset', {}, $('legend', {}, '풍요로움: 이 문제가 풀리면 쉬워지거나 따라오는 다른 문제 (한 줄에 하나, 없으면 비움)'), $('textarea', { name: 'richness' })),
       scale('want_to_solve', '풀고 싶은 정도 (1~5)'),
-      $('fieldset', {}, $('label', {}, $('input', { type: 'checkbox', name: 'known' }), ' 이미 알려진 문제·정리와 사실상 같다')),
+      $('fieldset', { class: 'scale' }, $('legend', {}, '이미 알려진 문제·정리와 사실상 같은가'), ...[['yes', '예'], ['no', '아니오'], ['na', '판단 불가']].map(([v, t]) => $('label', {}, $('input', { type: 'radio', name: 'known', value: v, required: '' }), ' ' + t))),
       $('button', { type: 'submit' }, '저장하고 다음'));
     app.append(header('문제 평가'), $('div', { class: 'card' }, $('h3', {}, '문제'), mathBlock(p.statement), p.finite_form ? $('div', {}, $('h4', {}, '유한 인스턴스'), mathBlock(p.finite_form)) : '', $('h4', {}, '제시된 중요성'), mathBlock(p.why_important)), rubric(), $('div', { class: 'card' }, form));
-    if (prev) { for (const k of ['clarity', 'difficulty', 'want_to_solve']) form.elements[k].value = prev[k] === null ? 'na' : String(prev[k]); form.elements.richness.value = (prev.richness_list || []).join('\n'); form.elements.known.checked = !!prev.known_problem; }
+    if (prev) { for (const k of ['clarity', 'difficulty', 'want_to_solve']) form.elements[k].value = prev[k] === null ? 'na' : String(prev[k]); form.elements.richness.value = (prev.richness_list || []).join('\n'); form.elements.known.value = prev.known_problem === null ? 'na' : (prev.known_problem ? 'yes' : 'no'); }
   };
 
   const renderSolution = ({ p, s }) => {
@@ -1830,7 +1828,9 @@ Format exactly as `context/README.md` specifies: `# DRAFT — ...`, `## Definiti
 
 - [ ] **Step 3: Write `human_problems.jsonl`**
 
-One line per open problem from Step 1(b), following `human_problems.example.jsonl` (ids `P-h00001`, `P-h00002`, …; `source: "human"`; `why_important` = `"Erdős problem #<n>, erdosproblems.com/<n>"`; the statement in English with LaTeX, copied faithfully and briefly).
+One line per open problem from Step 1(b), following `human_problems.example.jsonl` (ids `P-h00001`, `P-h00002`, …; `source: "human"`; the statement in English with LaTeX, copied faithfully and briefly). **Blinding rule:** `why_important` is shown to evaluators, so write it in the same register as the gen prompt asks of models (what would follow if solved, why it is not routine) and never name the source, problem number or URL there; put `"Erdős problem #<n>, erdosproblems.com/<n>"` in the `note` field, which `export_human` never exports.
+
+- **Task 3 (review round 1, plan decisions):** `rubric.md` — "판단 불가" applies to the 1–5 items and to `known_problem` (예/아니오/판단 불가); an empty `richness_list` means 0, not "cannot judge"; correctness is judged against the finite instance when one is given. `eval_problem.md` — `known_problem` is true/false/null; the "do not guess the author" sentence is dropped from both eval prompts. `human_problems.example.jsonl` — generic placeholder statement, `why_important` in consequence register, new `note` field for the source (never exported). `context/README.md` — generic example without a specific (and possibly misattributed) theorem. `check_prompts` asserts the exact placeholder set per prompt and that the example's `why_important` names no source. Downstream: `EVAL_PROBLEM_PROPS.known_problem` is `["boolean","null"]` (Task 4), `_clean_field` keeps bool-or-null (Task 8), the page's known_problem control is 예/아니오/판단 불가 radios (Task 9).
 
 - [ ] **Step 4: Check**
 
