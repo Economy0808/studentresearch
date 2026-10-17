@@ -292,14 +292,16 @@ def check_verify_errors(tmp: Path, data: Path) -> None:
     import pipeline
     d = tmp / "verr" / "data"
     (tmp / "verr" / "checkers").mkdir(parents=True)
-    for pid, body in (("P-crash", "raise RuntimeError('boom')"), ("P-slow", "__import__('time').sleep(30)")):
+    for pid, body in (("P-crash", "raise RuntimeError('boom')"), ("P-slow", "__import__('time').sleep(30)"),
+                      ("P-pexit", "print('PASS')\n    raise SystemExit(1)")):  # prints PASS, then a non-zero exit: must not count as pass
         (tmp / "verr" / "checkers" / f"{pid}.py").write_text(f"# REVIEWED\ndef check(c):\n    {body}\n", encoding="utf-8")
-    for pid in ("P-crash", "P-slow", "P-miss", "P-na"):
+    (tmp / "verr" / "checkers" / "P-empty.py").write_bytes(b"")  # zero bytes: no first line → not REVIEWED → skipped, never raises
+    for pid in ("P-crash", "P-slow", "P-miss", "P-na", "P-pexit", "P-empty"):
         append_jsonl(d / "problems.jsonl", {"id": pid, "kind": "checkable"})
         append_jsonl(d / "solutions.jsonl", {"id": "S-" + pid, "problem_id": pid, "candidate": None if pid == "P-na" else [1]})
-    assert pipeline.verify(d, timeout=3) == 4
+    assert pipeline.verify(d, timeout=3) == 5, "P-empty is skipped, the other five get a row"
     got = {v["problem_id"]: v["verdict"] for v in read_jsonl(d / "verifications.jsonl")}
-    assert got == {"P-crash": "error", "P-slow": "error", "P-miss": "error", "P-na": "na"}, got
+    assert got == {"P-crash": "error", "P-slow": "error", "P-miss": "error", "P-na": "na", "P-pexit": "error"}, got
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
