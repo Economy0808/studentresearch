@@ -376,8 +376,21 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
     assert "<" not in payload and json.loads(payload)["problems"][0]["statement"] == "x </script><!-- y", page
 
 
+def check_analyze(tmp: Path, data: Path) -> None:
+    import analyze
+    t = analyze.main(data, tmp / "results")
+    ai = t["q_g"].loc["ai"]
+    assert [ai.loc[s, "richness"] for s in ("sonnet", "opus", "fable")] == [1.0, 2.0, 3.0], ai
+    lad = t["ladder_ceiling"].set_index("generator")
+    assert lad.loc["sonnet", "ladder"] == 1.0, lad
+    assert lad.loc["fable", "ladder"] != lad.loc["fable", "ladder"], "fable has no upper model → NaN"
+    assert set(t["self_preference"]["rater"]) == {"sonnet", "opus", "fable"}
+    assert (tmp / "results" / "metrics.md").exists() and (tmp / "results" / "q_g.csv").exists()
+    assert not t["cannot_judge"].empty, "human ratings from check_roundtrip must appear"
+
+
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
-          check_eval, check_verify, check_verify_errors, check_roundtrip]
+          check_eval, check_verify, check_verify_errors, check_roundtrip, check_analyze]
 
 
 def main() -> None:
