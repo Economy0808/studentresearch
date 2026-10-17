@@ -9,7 +9,8 @@ from store import now
 
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
-STOP_MARKERS = ("limit", "authenticate", "oauth", "quota", "log in", "login", "credit")
+# Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
+STOP_MARKERS = ("usage limit", "rate limit", "authenticate", "oauth", "/login", "not logged in", "credit balance")
 
 
 class StopRun(Exception):
@@ -25,7 +26,12 @@ def claude_exe() -> str:
     if not found:
         raise StopRun("claude CLI not found on PATH")
     native = Path(found).parent / "node_modules" / "@anthropic-ai" / "claude-code" / "bin" / "claude.exe"
-    return str(native) if native.exists() else found
+    if native.exists():
+        return str(native)
+    if Path(found).suffix.lower() != ".exe":
+        raise StopRun(f"claude CLI at {found} is a shell shim and no native claude.exe was found next to it; "
+                      "arguments cannot be passed safely through cmd.exe")
+    return found
 
 
 def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry_run: bool = False) -> dict:
@@ -51,10 +57,15 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
 def _raise_if_error(out: dict) -> None:
     if not out.get("is_error"):
         return
-    msg = str(out.get("result", out))
-    if any(m in msg.lower() for m in STOP_MARKERS):
+    msg = str(out.get("result") or "")
+    low = msg.lower()
+    if any(m in low for m in STOP_MARKERS):
         raise StopRun(msg)
-    raise CallFailed(msg)
+    raise CallFailed(msg or "CLI reported an error without a message")
+
+
+def _text(b) -> str:
+    return b.decode("utf-8", "replace") if isinstance(b, bytes) else (b or "")
 
 
 def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
@@ -64,15 +75,19 @@ def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
            "--setting-sources", "project", "--no-session-persistence"]
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",
-                           cwd=cwd, timeout=1800)
-    except subprocess.TimeoutExpired:
-        return {"is_error": True, "result": "timeout after 1800s"}
+                           errors="replace", cwd=cwd, timeout=1800)
+    except subprocess.TimeoutExpired as e:
+        return {"is_error": True, "result": "timeout after 1800s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
+    except OSError as e:
+        return {"is_error": True, "result": f"could not start claude CLI: {e}"}
     if not p.stdout.strip():
-        return {"is_error": True, "result": f"empty stdout; stderr: {p.stderr[-800:]}"}
+        return {"is_error": True, "result": f"empty stdout (exit {p.returncode}); stderr tail: {p.stderr[-300:]}",
+                "stdout": p.stdout, "stderr": p.stderr, "returncode": p.returncode}
     try:
         return json.loads(p.stdout)
     except json.JSONDecodeError:
-        return {"is_error": True, "result": f"non-JSON stdout: {p.stdout[:800]}"}
+        return {"is_error": True, "result": f"non-JSON stdout (exit {p.returncode}): {p.stdout[:300]}",
+                "stdout": p.stdout, "stderr": p.stderr, "returncode": p.returncode}
 
 
 def _gen_grade(prompt: str) -> int:
@@ -87,7 +102,9 @@ def fake(model: str, schema: dict, prompt: str) -> dict:
     g = GRADE[model]
     gen = _gen_grade(prompt)
     props = schema.get("properties", {})
-    if "statement" in props:
+    if "saw_other_instructions" in props:
+        data = {"ok": True, "model_name": f"fake-{model}", "saw_other_instructions": False, "other_instructions_summary": ""}
+    elif "statement" in props:
         data = {"statement": f"[fake {model}] Is f(n) bounded for all n?", "grounding": "fake grounding",
                 "why_hard": "fake", "why_important": "fake", "resembles_known": None, "novelty_confidence": 0.5}
         if "checker_code" in props:

@@ -1,6 +1,7 @@
 """CLI for the experiment pipeline. Usage: python run.py [--data-dir data] [--dry-run] [--models a,b] <cmd> ..."""
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import llm
@@ -43,9 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv=None) -> None:
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")  # the console may be cp949; model text is UTF-8
     ap = build_parser()
     a = ap.parse_args(argv)
     models = [m.strip() for m in a.models.split(",") if m.strip()]
+    bad = [m for m in models if m not in llm.GRADE]
+    if bad:
+        ap.error(f"unknown model alias(es) {bad}; allowed: {list(llm.GRADE)}")
     try:
         if a.cmd == "probe":
             probe(models, a.data_dir, a.dry_run)
@@ -53,9 +59,9 @@ def main(argv=None) -> None:
             import selfcheck
             selfcheck.main()
     except llm.StopRun as e:
-        raise SystemExit(f"STOPPED (auth or usage limit): {e}\n"
-                         "Fix it (run `claude` and /login, or wait for the usage window) and rerun the same command; "
-                         "finished items are kept.")
+        raise SystemExit(f"STOPPED: {e}\n"
+                         "If this is a login or usage-limit problem: run `claude` and /login, or wait for the usage "
+                         "window, then rerun the same command; finished items are kept.")
 
 
 if __name__ == "__main__":
