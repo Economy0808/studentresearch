@@ -53,7 +53,14 @@ details pre{white-space:pre-wrap;font:inherit}
 
   let state = null, steps = [];
   const nowIso = () => new Date().toISOString();
-  const download = () => { const rows = Object.values(state.ratings); const blob = new Blob([JSON.stringify({ rater: state.rater, exported_at: nowIso(), ratings: rows }, null, 1)], { type: 'application/json' }); const a = $('a', { href: URL.createObjectURL(blob), download: 'ratings_' + state.rater + '.json' }); document.body.append(a); a.click(); a.remove(); };
+  // Artifact `downloads` capability when this view offers it (viewer confirms the save); otherwise the plain anchor download
+  const download = async () => {
+    const rows = Object.values(state.ratings);
+    const text = JSON.stringify({ rater: state.rater, exported_at: nowIso(), ratings: rows }, null, 1);
+    const name = 'ratings_' + state.rater + '.json';
+    try { const dl = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null; if (dl) { await dl.save({ filename: name, data: text }); return; } } catch (e) { if (e && (e.code === 'declined' || e.code === 'rate_limited')) return; /* the viewer said no / a prompt is open: do not retry; any other failure falls through to the anchor */ }
+    const a = $('a', { href: URL.createObjectURL(new Blob([text], { type: 'application/json' })), download: name }); document.body.append(a); a.click(); a.remove();
+  };
 
   const scale = (name, labelText) => { const fs = $('fieldset', { class: 'scale' }, $('legend', {}, labelText)); for (const v of [1, 2, 3, 4, 5, 'na']) fs.append($('label', {}, $('input', { type: 'radio', name, value: String(v), required: '' }), ' ' + (v === 'na' ? '판단 불가' : v))); return fs; };
   const readScale = (form, name) => { const v = form.elements[name].value; return v === 'na' ? null : Number(v); };
