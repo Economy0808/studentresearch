@@ -77,7 +77,7 @@ claude -p <user prompt> --model <sonnet|opus|fable> --output-format json
 id            "P-" + 6자리 hex
 source        "sonnet" | "opus" | "fable" | "human" | 기타 자유 텍스트(타사 모델 수동 입력용)
 kind          "open" | "checkable"
-context_id    컨텍스트 팩 파일명 (human은 null 가능)
+context_id    컨텍스트 팩 파일명 + "-" + 내용 SHA-256 앞 8자리 (예: additive_comb-3fa9c1e2). 팩을 고치면 모든 모델의 생성 키가 새로 시작된다. human은 null 가능
 focus         초점을 준 컨텍스트 섹션 제목 (8절)
 statement, grounding, why_hard, why_important     문자열(영어, LaTeX 허용)
 resembles_known        닮은 알려진 추측/정리 이름 또는 null
