@@ -20,7 +20,25 @@ def check_store(tmp: Path, data: Path) -> None:
     assert i.startswith("P-") and len(i) == 8, i
 
 
-CHECKS = [check_store]
+def check_llm_dry(tmp: Path, data: Path) -> None:
+    import llm
+    schema = {"type": "object", "properties": {"clarity": {}, "richness_list": {}}, "required": []}
+    raw = tmp / "raw" / "t" / "x.json"
+    out = llm.call("fable", "sys", "rate this: [fake sonnet] q", schema, raw, dry_run=True)
+    assert out["richness_list"] == ["derived question"], out  # generator grade 1 → one item
+    saved = __import__("json").loads(raw.read_text(encoding="utf-8"))
+    assert saved["model"] == "fable" and saved["cli_output"]["structured_output"] == out
+    assert llm.GRADE == {"sonnet": 1, "opus": 2, "fable": 3}
+    bad = {"is_error": True, "result": "Failed to authenticate: OAuth session expired"}
+    try:
+        llm._raise_if_error(bad)
+    except llm.StopRun:
+        pass
+    else:
+        raise AssertionError("auth error must raise StopRun")
+
+
+CHECKS = [check_store, check_llm_dry]
 
 
 def main() -> None:
