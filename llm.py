@@ -56,6 +56,11 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
             data = json.loads(out.get("result") or "")
         except (TypeError, json.JSONDecodeError):
             raise CallFailed("no structured_output and result is not JSON")
+    if not isinstance(data, dict):
+        raise CallFailed(f"output is {type(data).__name__}, not an object")
+    missing = [k for k in schema.get("required", []) if k not in data]
+    if missing:
+        raise CallFailed(f"output missing required keys {missing}")
     return data
 
 

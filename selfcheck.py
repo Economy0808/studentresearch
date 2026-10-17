@@ -116,6 +116,13 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
                                           "modelUsage": {"claude-opus-5-5": {"inputTokens": 1}}})
         assert llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "right.json") == {"ok": True}
+        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"nope": 1}})
+        try:
+            llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {"ok": {}}, "required": ["ok"]}, tmp / "raw" / "t" / "invalid.json")
+        except llm.CallFailed as e:
+            assert "missing required keys" in str(e), e
+        else:
+            raise AssertionError("output missing a required key must raise CallFailed")
     finally:
         llm.subprocess.run, llm.claude_exe = real_run, real_exe
 
@@ -191,6 +198,38 @@ def check_gen(tmp: Path, data: Path) -> None:
         pass
     else:
         raise AssertionError("a '## Result:' line inside a code fence must not count as a section")
+    mixed = tmp / "mixed.md"
+    mixed.write_text("## Result: Real\nx\n\n```\n## Result: Fenced\n```\n\n~~~\n## Result: Tilde\n~~~\n\n## Result: Real2\ny\n", encoding="utf-8")
+    assert pipeline.parse_context(mixed)[1] == ["Result: Real", "Result: Real2"]
+    try:
+        pipeline.parse_context(Path(__file__).resolve().parent / "context" / "README.md")
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("context/README.md has only fenced Result headings and must be rejected")
+    prompts = {json.loads((data / "raw" / "gen" / f"ctx_open_{m}_0.json").read_text(encoding="utf-8"))["prompt"] for m in ("sonnet", "opus", "fable")}
+    assert len(prompts) == 1, "the three models must receive byte-identical prompts"
+    for p in probs:
+        if p["kind"] == "checkable":
+            assert p["finite_form"] and p["checker_code"] and p["candidate_format"], p
+    # a failed call is recorded and retried on the next run
+    real_call = pipeline.llm.call
+    calls = {"n": 0}
+
+    def flaky(*a, **kw):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise pipeline.llm.CallFailed("boom")
+        return real_call(*a, **kw)
+
+    pipeline.llm.call = flaky
+    try:
+        assert pipeline.gen(data, ctx, "open", 3, dry_run=True) == 2, "one of the 3 new items fails"
+        fails = read_jsonl(data / "failures.jsonl")
+        assert len(fails) == 1 and fails[0]["stage"] == "gen" and fails[0]["error"] == "boom", fails
+        assert pipeline.gen(data, ctx, "open", 3, dry_run=True) == 1, "the failed item is retried"
+    finally:
+        pipeline.llm.call = real_call
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen]
