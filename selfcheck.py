@@ -212,7 +212,8 @@ def check_gen(tmp: Path, data: Path) -> None:
     for p in probs:
         if p["kind"] == "checkable":
             assert p["finite_form"] and p["checker_code"] and p["candidate_format"], p
-    # a failed call is recorded and retried on the next run
+    # a failed call is recorded and retried on the next run (own data dir: the shared one must keep exactly 9 problems)
+    d2 = tmp / "flaky" / "data"
     real_call = pipeline.llm.call
     calls = {"n": 0}
 
@@ -224,12 +225,13 @@ def check_gen(tmp: Path, data: Path) -> None:
 
     pipeline.llm.call = flaky
     try:
-        assert pipeline.gen(data, ctx, "open", 3, dry_run=True) == 2, "one of the 3 new items fails"
-        fails = read_jsonl(data / "failures.jsonl")
+        assert pipeline.gen(d2, ctx, "open", 1, dry_run=True) == 2, "one of the 3 calls fails"
+        fails = read_jsonl(d2 / "failures.jsonl")
         assert len(fails) == 1 and fails[0]["stage"] == "gen" and fails[0]["error"] == "boom", fails
-        assert pipeline.gen(data, ctx, "open", 3, dry_run=True) == 1, "the failed item is retried"
+        assert pipeline.gen(d2, ctx, "open", 1, dry_run=True) == 1, "the failed item is retried"
     finally:
         pipeline.llm.call = real_call
+    assert len(read_jsonl(data / "problems.jsonl")) == 9, "shared data dir must still hold exactly 9 problems"
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen]

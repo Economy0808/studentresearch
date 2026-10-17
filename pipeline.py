@@ -87,6 +87,9 @@ def gen(data_dir: Path, context_path: Path, kind: str, n: int, models=llm.MODELS
             except llm.CallFailed as e:
                 record_failure(data_dir, "gen", key, model, e)
                 continue
+            if kind == "checkable" and not all(isinstance(out.get(k), str) and out[k].strip() for k in CHECKABLE_PROPS):
+                record_failure(data_dir, "gen", key, model, ValueError("checkable fields must be non-empty strings"))
+                continue
             row = {"id": new_id("P"), "source": model, "kind": kind, "context_id": context_id,
                    "focus": focus, "gen_key": key}
             row.update({k: None for k in CHECKABLE_PROPS})
