@@ -1,0 +1,136 @@
+{
+ "model": "fable",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Return ok=true, model_name=the model you are, saw_other_instructions=true if you received any instructions, personas, skills or project notes besides the short system prompt and this message, and summarize them in other_instructions_summary (empty string if none).",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "ok": {
+    "type": "boolean"
+   },
+   "model_name": {
+    "type": "string"
+   },
+   "saw_other_instructions": {
+    "type": "boolean"
+   },
+   "other_instructions_summary": {
+    "type": "string"
+   }
+  },
+  "required": [
+   "ok",
+   "model_name",
+   "saw_other_instructions",
+   "other_instructions_summary"
+  ]
+ },
+ "started_at": "2026-10-18T03:21:43+00:00",
+ "finished_at": "2026-10-18T03:21:56+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 11482,
+  "stop_reason": "tool_use",
+  "session_id": "7160ad18-b9e0-4702-b6b5-148e19687fe2",
+  "total_cost_usd": 0.05786,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 1582,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 524,
+   "output_tokens_details": {
+    "thinking_tokens": 0
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 1582,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 524,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 1582,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 1582
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-fable-5-1": {
+    "inputTokens": 2,
+    "outputTokens": 524,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 1582,
+    "webSearchRequests": 0,
+    "costUSD": 0.05786,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 64000,
+    "thinkingTokens": 0,
+    "canonicalModel": "claude-fable-5-1",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"ok\":true,\"model_name\":\"Fable 5.1 (claude-fable-5-1)\",\"saw_other_instructions\":true,\"other_instructions_summary\":\"Besides the short system prompt (Claude agent on the Claude Agent SDK; research-mathematician persona working alone with no tools/internet; answer only in requested JSON format; English with LaTeX; batch independent tool calls), I received: (1) a system-reminder with user context (user email gjlee0808@yonsei.ac.kr, to be used only for identification/attribution, never sent to unrelated services); (2) an environment block describing the runtime: Windows 11 Pro, PowerShell primary shell with Bash also available, working directory C:\\\\Users\\\\Public\\\\Documents\\\\ESTsoft\\\\CreatorTemp\\\\claude_cli_cwd, not a git repo, a session-specific scratchpad directory to use for temp files (with full absolute paths when naming files), security guidance for handling downloaded/untrusted files (isolate in empty directories, run Python with -I), the model identity (Fable 5.1, claude-fable-5-1, knowledge cutoff June 2026), today's date 2026-10-18, and a token budget note; (3) a note that deferred tools may be surfaced later via <functions> blocks. No skills or project notes were provided.\"}",
+  "structured_output": {
+   "ok": true,
+   "model_name": "Fable 5.1 (claude-fable-5-1)",
+   "saw_other_instructions": true,
+   "other_instructions_summary": "Besides the short system prompt (Claude agent on the Claude Agent SDK; research-mathematician persona working alone with no tools/internet; answer only in requested JSON format; English with LaTeX; batch independent tool calls), I received: (1) a system-reminder with user context (user email gjlee0808@yonsei.ac.kr, to be used only for identification/attribution, never sent to unrelated services); (2) an environment block describing the runtime: Windows 11 Pro, PowerShell primary shell with Bash also available, working directory C:\\Users\\Public\\Documents\\ESTsoft\\CreatorTemp\\claude_cli_cwd, not a git repo, a session-specific scratchpad directory to use for temp files (with full absolute paths when naming files), security guidance for handling downloaded/untrusted files (isolate in empty directories, run Python with -I), the model identity (Fable 5.1, claude-fable-5-1, knowledge cutoff June 2026), today's date 2026-10-18, and a token budget note; (3) a note that deferred tools may be surfaced later via <functions> blocks. No skills or project notes were provided."
+  },
+  "ttft_ms": 11557,
+  "type": "result",
+  "duration_ms": 11603,
+  "uuid": "9c14244d-2e0c-40aa-895b-16e6645b7e9a",
+  "ttft_stream_ms": 3043,
+  "time_to_request_ms": 110,
+  "first_content_frame_ms": 3043,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}

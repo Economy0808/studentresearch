@@ -1,0 +1,136 @@
+{
+ "model": "sonnet",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Return ok=true, model_name=the model you are, saw_other_instructions=true if you received any instructions, personas, skills or project notes besides the short system prompt and this message, and summarize them in other_instructions_summary (empty string if none).",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "ok": {
+    "type": "boolean"
+   },
+   "model_name": {
+    "type": "string"
+   },
+   "saw_other_instructions": {
+    "type": "boolean"
+   },
+   "other_instructions_summary": {
+    "type": "string"
+   }
+  },
+  "required": [
+   "ok",
+   "model_name",
+   "saw_other_instructions",
+   "other_instructions_summary"
+  ]
+ },
+ "started_at": "2026-10-18T03:21:25+00:00",
+ "finished_at": "2026-10-18T03:21:33+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 5216,
+  "stop_reason": "tool_use",
+  "session_id": "907654be-ae8b-4d12-9f89-efd65bb8f1c8",
+  "total_cost_usd": 0.0076211000000000004,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 1056,
+   "cache_read_input_tokens": 531,
+   "output_tokens": 334,
+   "output_tokens_details": {
+    "thinking_tokens": 0
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 1056,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 334,
+     "cache_read_input_tokens": 531,
+     "cache_creation_input_tokens": 1056,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 1056
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-sonnet-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 334,
+    "cacheReadInputTokens": 531,
+    "cacheCreationInputTokens": 1056,
+    "webSearchRequests": 0,
+    "costUSD": 0.0076211000000000004,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 0,
+    "canonicalModel": "claude-sonnet-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"ok\":true,\"model_name\":\"Sonnet 5.5 (claude-sonnet-5-5)\",\"saw_other_instructions\":true,\"other_instructions_summary\":\"Besides the short system prompt and the user message, I received: a system prompt saying I'm a research mathematician working alone with no tools, answering only in the requested JSON format, with math in English and LaTeX, plus a note on making independent tool calls in parallel. There was also an attached context block with the user's email (for identification only, not to be sent elsewhere), and an environment description (Windows 11, PowerShell/Bash, working directory, scratchpad directory, untrusted-download handling rules, model identity as Sonnet 5.5, and today's date 2026-10-18).\"}",
+  "structured_output": {
+   "ok": true,
+   "model_name": "Sonnet 5.5 (claude-sonnet-5-5)",
+   "saw_other_instructions": true,
+   "other_instructions_summary": "Besides the short system prompt and the user message, I received: a system prompt saying I'm a research mathematician working alone with no tools, answering only in the requested JSON format, with math in English and LaTeX, plus a note on making independent tool calls in parallel. There was also an attached context block with the user's email (for identification only, not to be sent elsewhere), and an environment description (Windows 11, PowerShell/Bash, working directory, scratchpad directory, untrusted-download handling rules, model identity as Sonnet 5.5, and today's date 2026-10-18)."
+  },
+  "ttft_ms": 5386,
+  "type": "result",
+  "duration_ms": 5432,
+  "uuid": "fc500133-034a-40d0-8a45-50f6b8e8174d",
+  "ttft_stream_ms": 3379,
+  "time_to_request_ms": 213,
+  "first_content_frame_ms": 3379,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}
