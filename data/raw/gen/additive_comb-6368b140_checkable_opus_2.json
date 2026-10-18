@@ -1,0 +1,167 @@
+{
+ "model": "opus",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Below is a context pack summarizing recent results in one area of mathematics.\n\n<context>\n# DRAFT — additive combinatorics pack\n\n## Definitions\n\nThroughout, $\\mathbb N=\\{1,2,3,\\dots\\}$, $\\mathbb N_0=\\mathbb N\\cup\\{0\\}$ and $[N]=\\{1,\\dots,N\\}$. For positive functions, $f\\ll g$ (equivalently $f=O(g)$) means $f\\le Cg$ for a constant $C$; a subscript, as in $\\ll_\\varepsilon$, means $C$ may depend on that parameter; $f=o(g)$ means $f/g\\to0$.\n\n**Sumsets and representation functions.** For $A,B\\subseteq\\mathbb Z$, $A+B=\\{a+b:a\\in A,\\ b\\in B\\}$, $A-B=\\{a-b:a\\in A,\\ b\\in B\\}$, and $hA=A+\\dots+A$ ($h$ summands, repetitions allowed). The number of ordered representations of $n$ as a sum of two elements of $A$ is $1_A*1_A(n)=|\\{(a,a')\\in A^2:\\ a+a'=n\\}|$; the number of unordered representations is $r_A(n)=|\\{(a,a')\\in A^2:\\ a\\le a',\\ a+a'=n\\}|$. Thus $n\\in A+A$ iff $r_A(n)\\ge1$.\n\n**Additive bases.** A set $A\\subseteq\\mathbb N_0$ is an *asymptotic basis of order $h$* if $hA$ contains every sufficiently large integer. An asymptotic basis $A$ of order $2$ is *minimal* if $A\\setminus\\{a\\}$ is not an asymptotic basis of order $2$ for every $a\\in A$ (equivalently, no proper subset of $A$ is an asymptotic basis of order $2$).\n\n**Sidon sets.** A set $A\\subseteq\\mathbb Z$ is a *Sidon set* ($B_2$ set) if $a+b=c+d$ with $a,b,c,d\\in A$ forces $\\{a,b\\}=\\{c,d\\}$; equivalently all sums $a+b$ with $a\\le b$ are distinct, equivalently all differences $a-b$ with $a\\ne b$ are distinct.\n\n**Perfect difference sets.** Let $v\\ge1$. A finite set $B\\subset\\mathbb Z$ whose elements are pairwise distinct modulo $v$ is a *perfect difference set modulo $v$* if every nonzero residue class modulo $v$ equals $b-b'$ for exactly one ordered pair $(b,b')$ of distinct elements of $B$. Then $|B|(|B|-1)=v-1$; Singer's theorem produces such sets with $v=q^2+q+1$ and $|B|=q+1$ for every prime power $q$. A finite set $A$ *extends to a perfect difference set modulo $v$* if $A\\subseteq B$ for some such $B$.\n\n**Arithmetic progressions.** A $k$-term arithmetic progression ($k$-AP) is $x,x+d,\\dots,x+(k-1)d$; it is non-trivial if $d\\ne0$. Let $r_k(N)$ be the largest size of a set $A\\subseteq[N]$ containing no non-trivial $k$-AP. Roth showed $r_3(N)=o(N)$ and Szemerédi showed $r_k(N)=o(N)$ for every $k$. A *finite colouring* of a set $X$ is a map from $X$ to a finite set; a subset of $X$ is *monochromatic* if the map is constant on it.\n\n**Densities.** The upper density of $A\\subseteq\\mathbb N$ is $\\overline d(A)=\\limsup_{N\\to\\infty}|A\\cap[N]|/N$ and its upper Banach density is $d^*(A)=\\lim_{N\\to\\infty}\\sup_{M\\ge0}|A\\cap\\{M+1,\\dots,M+N\\}|/N$. If $\\overline d(A)>0$ then $d^*(A)>0$.\n\n**Sum-free sets.** A set $S\\subseteq\\mathbb Z$ is *sum-free* if there are no $x,y,z\\in S$ (not necessarily distinct) with $x+y=z$.\n\n**Typical shape of a problem.** Questions in this area usually ask for the order of growth (or the exact asymptotics) of an extremal function such as the largest size of a subset of $[N]$ with a prescribed additive property, whether a limit or a density exists, or whether an infinite set with prescribed additive structure exists.\n\n## Result: Strong bounds for 3-term progressions\nStatement. There is an absolute constant $\\beta>0$ such that every set $A\\subseteq[N]$ with $|A|\\ge 2^{-O((\\log N)^{\\beta})}\\,N$ contains a non-trivial $3$-term arithmetic progression. In particular $r_3(N)\\ll_C N/(\\log N)^{C}$ for every $C>0$. (Earlier results gave a $3$-AP only for $|A|\\ge N/(\\log N)^{1+c}$, for a constant $c>0$.)\n\nProof idea. The authors first develop new analytic methods for the analogous question over finite fields and then adapt versions of those methods to the integers.\n\nSource: Kelley and Meka, 2023, arXiv:2302.05537, Erdős #140.\n\n## Result: Sidon sets that are asymptotic bases of order 3\nStatement. There exists a Sidon set $S\\subseteq\\mathbb N$ (necessarily infinite) that is an asymptotic basis of order $3$: every sufficiently large integer is a sum of three elements of $S$. This answers a question of Erdős, Sárközy and Sós.\n\nProof idea. The proof relies on a deep result of Sawin on the $\\mathbb F_q[t]$-analogue of Montgomery's conjecture for convolutions of the von Mangoldt function.\n\nSource: Pilatte, 2023, arXiv:2303.09659, Erdős #157.\n\n## Result: An explicit economical additive basis\nStatement. There exist an explicit set $A\\subseteq\\mathbb N_0$ and absolute constants $C,c>0$ such that $A+A=\\mathbb N_0$ and the number $\\sigma_A(n)$ of representations $n=a+a'$ with $a,a'\\in A$ satisfies $\\sigma_A(n)\\le C\\,n^{c/\\log\\log n}$ for all sufficiently large $n$; in particular $\\sigma_A(n)=n^{o(1)}$, i.e. $\\sigma_A(n)=o(n^{\\varepsilon})$ for every $\\varepsilon>0$. (The existence of such a set was proved earlier by Erdős by probabilistic methods; the point is an explicit construction.)\n\nProof idea. Write integers in the mixed radix system $(p_1^2,p_2^2,\\dots)$ with primes $p_k\\equiv3\\pmod 8$ chosen as the least such prime in $[f(k),2f(k))$ for an increasing function $f$, restrict the $k$-th digit to a modular additive basis of $\\mathbb Z/p_k^2\\mathbb Z$ with bounded representation counts (Ruzsa's construction), and count digit choices digit by digit to bound the number of representations.\n\nSource: Jain, Pham, Sawhney and Zakharov, 2024, arXiv:2405.08650, Erdős #29.\n\n## Result: A finite Sidon set that extends to no perfect difference set\nStatement. Erdős conjectured that every finite Sidon set $A\\subset\\mathbb N$ extends to a perfect difference set modulo $p^2+p+1$ for some prime $p$. The Sidon set $\\{1,2,4,8,13\\}$ does not extend to a perfect difference set modulo any $v>0$, so it is a counterexample to this conjecture. (Hall had published an earlier, different counterexample, $\\{1,3,9,10,13\\}$, in 1947.)\n\nProof idea. A perfect difference set $B$ modulo $v$ gives a cyclic projective plane with the polarity $x\\leftrightarrow B-x$; Baer's parity results on its absolute points (the points $x$ with $2x\\in B$) yield a contradiction for any $B$ containing $\\{1,2,4,8,13\\}$.\n\nSource: Alexeev and Mixon, 2025, arXiv:2510.19804, Erdős #707.\n\n## Result: Independence of three properties of order-2 bases\nStatement. For an asymptotic basis $A$ of order $2$ consider (P1) $r_A(n)\\to\\infty$; (P2) $A=B\\cup C$ for disjoint asymptotic bases $B,C$ of order $2$; (P3) $A$ contains a minimal asymptotic basis of order $2$. Erdős and Nathanson proved that if $r_A(n)>C\\log n$ for all large $n$, for a constant $C>1/\\log(4/3)$, then (P2) and (P3) both hold. Larsen proved that for slower growth of $r_A$ the three properties are independent: for each of the eight possible true/false combinations of (P1), (P2), (P3) there is an asymptotic basis of order $2$ with exactly that combination.\n\nProof idea. The bases are produced by a randomized iterative construction carried out inductively on exponentially growing intervals.\n\nSource: Larsen, 2026, arXiv:2603.03472, Erdős #869, #871 (the paper also answers the first question of Erdős #868; the $\\epsilon\\log n$ strengthening is in a separate preprint; #871 was first settled in an earlier note by the same author).\n\n## Result: Colouring versus density for progression-free subsets\nStatement. For every integer $k\\ge3$ and every real $\\mu\\in(0,\\tfrac{k-1}{k})$ there is a set $X=X(k,\\mu)\\subseteq\\mathbb N$ such that (i) every finite colouring of $X$ has a monochromatic $k$-term arithmetic progression, and (ii) every finite $Y\\subseteq X$ has a subset $Z\\subseteq Y$ with $|Z|\\ge\\mu|Y|$ containing no $k$-term arithmetic progression. The range of $\\mu$ is sharp, since the theorem fails for $\\mu>\\tfrac{k-1}{k}$.\n\nProof idea. Prove a Hales–Jewett (combinatorial lines) version by a partite construction over hypergraphs with large chromatic number and a fractional $\\mu$-property, then transfer it to the integers by an injective base-$T$ style encoding of the Hales–Jewett cube under which combinatorial lines become arithmetic progressions.\n\nSource: Reiher, Rödl and Sales, 2023, arXiv:2311.08556, Erdős #847.\n\n## Result: Infinite sumsets with a shift inside dense sets\nStatement. Let $A\\subseteq\\mathbb N$ have positive upper Banach density (in particular, positive upper density suffices). Then there exist an infinite set $B\\subseteq A$ and an integer $t\\ge1$ such that $\\{b_1+b_2:\\ b_1,b_2\\in B,\\ b_1\\ne b_2\\}+t\\subseteq A$. The shift $t$ cannot be dropped and the restriction $b_1\\ne b_2$ cannot be removed.\n\nProof idea. Via a Furstenberg correspondence the statement is reduced to a dynamical one about \"Erdős progressions\", dynamical analogues of $3$-term progressions; one then constructs a measure on pairs lying above $3$-term progressions in the Kronecker factor and shows that almost every pair yields an Erdős progression.\n\nSource: Kra, Moreira, Richter and Robertson, 2022, arXiv:2206.12377, Erdős #656.\n\n## Result: Large sum-free subsets of sets of integers\nStatement. There is an absolute constant $c>0$ such that every finite set $A$ of $n$ integers contains a sum-free subset $A'$ with $|A'|\\ge n/3+c\\log\\log n$. (Earlier bounds: $n/3$ by an argument of Erdős, $(n+1)/3$ by Alon and Kleitman, and $(n+2)/3$ by Bourgain.)\n\nProof idea. As in the classical argument, take the elements $a\\in A$ whose dilate $ax$ lands in the sum-free interval $(1/3,2/3)$ of the torus for a well-chosen $x$; the improvement reduces to showing that the $L^1$ norm of $\\sum_{a\\in A}\\big(1_{(1/3,2/3)}(ax)-\\tfrac13\\big)$ is $\\gg\\log\\log n$, which is proved by a structure theory for sets with small $L^1$ norm (small additive dimension, structured distribution modulo small primes) together with an explicit test function.\n\nSource: Bedert, 2025, arXiv:2502.08624.\n\n## Result: Improved bounds for Szemerédi's theorem\nStatement. For every integer $k\\ge5$ there is a constant $c_k>0$ such that $r_k(N)\\ll_k N\\exp\\!\\big(-(\\log\\log N)^{c_k}\\big)$.\n\nProof idea. Combine recent quasipolynomial bounds for the inverse theorem for the Gowers uniformity norms with the Heath-Brown–Szemerédi density increment strategy as reformulated by Green and Tao.\n\nSource: Leng, Sah and Sawhney, 2024, arXiv:2402.17995.\n\n## Format examples\nThe following three statements are already solved. They are included only to show the usual phrasing and level of precision of an Erdős-style problem (define every symbol, ask one or two sharp questions). They are not to be posed again.\n\nExample 1. Let $f(N)$ be the size of the largest Sidon subset of $\\{1,\\dots,N\\}$ and let $A(N)$ be the number of Sidon subsets of $\\{1,\\dots,N\\}$. Is it true that $A(N)/2^{f(N)}\\to\\infty$? Is it true that $A(N)=2^{(1+o(1))f(N)}$?\n\nExample 2. If $\\mathbb N$ is $2$-coloured, must there exist a monochromatic $3$-term arithmetic progression $x,x+d,x+2d$ such that $d>x$?\n\nExample 3. Is it true that, given any infinite set $A\\subset\\mathbb N$, there is a set $B$ of density $0$ such that $A+B$ contains all except finitely many integers?\n\n</context>\n\nTask: pose ONE problem in this area that you believe is currently unsolved, grounded in the context above, of the form \"find a construction, counterexample, or extremal object\", so that a proposed answer can be checked mechanically. Focus on the section titled \"Result: An explicit economical additive basis\": start from a gap, a boundary case, or a natural extension that the results in that section leave open.\n\nRequirements\n- statement: the general (infinite-family) problem, precise and self-contained, at most 150 words. Define every symbol.\n- grounding: which results in the context the problem extends, and exactly where the gap is (cite section titles).\n- why_hard: the obvious approaches and the specific reason each one fails.\n- why_important: what would follow if it were solved.\n- resembles_known: the name of any well-known conjecture or theorem this resembles, or null.\n- novelty_confidence: your probability (0 to 1) that the general problem is genuinely open.\n- finite_form: one concrete finite instance (fix the parameters, e.g. n = 12) whose solution is a finite object (a set, a sequence, a graph, a coloring) and which you believe is still hard at that size, not solvable by a quick brute-force search.\n- candidate_format: the exact JSON shape a solver must submit, e.g. \"a JSON array of distinct positive integers at most 100\".\n- checker_code: a complete Python function `def check(candidate) -> bool` returning True exactly when the candidate solves finite_form. Standard library only, deterministic, finishes within 10 seconds on any input of the stated shape, and returns False (never raises) on malformed input.\n\nDo not restate a named conjecture. The checker must test the finite_form you stated, nothing else.\n",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "statement": {
+    "type": "string"
+   },
+   "grounding": {
+    "type": "string"
+   },
+   "why_hard": {
+    "type": "string"
+   },
+   "why_important": {
+    "type": "string"
+   },
+   "resembles_known": {
+    "type": [
+     "string",
+     "null"
+    ]
+   },
+   "novelty_confidence": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 1
+   },
+   "finite_form": {
+    "type": "string"
+   },
+   "candidate_format": {
+    "type": "string"
+   },
+   "checker_code": {
+    "type": "string"
+   }
+  },
+  "required": [
+   "statement",
+   "grounding",
+   "why_hard",
+   "why_important",
+   "resembles_known",
+   "novelty_confidence",
+   "finite_form",
+   "candidate_format",
+   "checker_code"
+  ],
+  "additionalProperties": false
+ },
+ "started_at": "2026-10-18T03:51:07+00:00",
+ "finished_at": "2026-10-18T03:51:53+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 40818,
+  "stop_reason": "tool_use",
+  "session_id": "18f19018-9831-4cbd-bf0d-d70e7cc3f690",
+  "total_cost_usd": 0.134731,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 6430,
+   "cache_read_input_tokens": 715,
+   "output_tokens": 4157,
+   "output_tokens_details": {
+    "thinking_tokens": 1996
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 6430,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 4157,
+     "cache_read_input_tokens": 715,
+     "cache_creation_input_tokens": 6430,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 6430
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 4157,
+    "cacheReadInputTokens": 715,
+    "cacheCreationInputTokens": 6430,
+    "webSearchRequests": 0,
+    "costUSD": 0.134731,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 1996,
+    "canonicalModel": "claude-opus-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"statement\":\"For a finite set $A\\\\subseteq\\\\mathbb N_0$ and $n\\\\in\\\\mathbb N_0$ let $\\\\sigma_A(n)=|\\\\{(a,a')\\\\in A^2: a+a'=n\\\\}|$ be the number of ordered representations. For $k\\\\in\\\\mathbb N$ let $N_k\\\\in\\\\mathbb N_0\\\\cup\\\\{\\\\infty\\\\}$ be the supremum of all $N$ for which some $A\\\\subseteq\\\\{0,1,\\\\dots,N\\\\}$ satisfies $\\\\{0,1,\\\\dots,N\\\\}\\\\subseteq A+A$ and $\\\\sigma_A(n)\\\\le k$ for every $0\\\\le n\\\\le N$. A compactness argument shows that $N_k=\\\\infty$ exactly when some $A\\\\subseteq\\\\mathbb N_0$ has $A+A=\\\\mathbb N_0$ and $\\\\sup_n\\\\sigma_A(n)\\\\le k$. Problem: is $N_8$ finite? More concretely, how fast does the largest attainable $N$ grow as $k=8,9,10,\\\\dots$ increases? Equivalently, for each $N$, what is the smallest possible value of $\\\\max_{n\\\\le N}\\\\sigma_A(n)$ over all $A$ with $\\\\{0,\\\\dots,N\\\\}\\\\subseteq A+A$? Does this smallest value grow faster than every constant, and if so, at what rate in $N$?\",\"grounding\":\"This extends the section \\\"Result: An explicit economical additive basis\\\" (Jain–Pham–Sawhney–Zakharov, Erdős #29). That paper builds an explicit $A$ with $A+A=\\\\mathbb N_0$ and $\\\\sigma_A(n)\\\\le n^{c/\\\\log\\\\log n}$. Its digit-by-digit construction uses Ruzsa's modular bases of $\\\\mathbb Z/p^2\\\\mathbb Z$, whose representation counts are bounded by a constant. The gap is between this $n^{o(1)}$ upper bound and the known lower bounds, which only say that $\\\\sigma_A$ cannot stay below a small absolute constant. From memory: Grekos–Haddad–Helou–Pihko showed $\\\\limsup\\\\sigma_A\\\\ge6$, and Borwein–Choi–Chu raised this to $\\\\ge 8$. By compactness these bounds imply $N_k<\\\\infty$ for $k\\\\le7$. Nothing is known about $N_8$ or about the finite growth rate. The finite question measures how far the \\\"bounded modular basis\\\" ingredient can be pushed on long initial segments.\",\"why_hard\":\"Greedy and random constructions give either gaps in the coverage or representation counts that grow like $\\\\log N$. Erdős's probabilistic method naturally produces $\\\\sigma\\\\asymp\\\\log n$, not a constant. Ruzsa-type modular bases keep the counts bounded modulo $m$, but lifting them to the integers $\\\\{0,\\\\dots,N\\\\}$ breaks the bound near the boundary and across carries. The mixed-radix trick used for Erdős #29 multiplies constants over the digits, which is why its bound is $n^{o(1)}$ and not a constant. On the lower-bound side, the Borwein–Choi–Chu argument works with generating functions on the unit circle and gives only a small absolute constant. Neither approach seems to say whether $N_8$ is finite, and exhaustive search grows exponentially in $N$.\",\"why_important\":\"If $N_8$ (or any $N_k$) is shown to be finite, that would be quantitative evidence for the Erdős–Turán philosophy that bases cannot be uniformly economical. If $N_k=\\\\infty$ for some $k$, there would be a basis with bounded representation function, which would disprove a famous conjecture. A good finite growth rate for the minimal value of $\\\\max_{n\\\\le N}\\\\sigma_A(n)$ would also say how close the explicit $n^{o(1)}$ construction is to optimal.\",\"resembles_known\":\"Erdős–Turán conjecture for additive bases (finite/threshold version)\",\"novelty_confidence\":0.6,\"finite_form\":\"Take $N=2000$ and $k=8$. Find a set $A\\\\subseteq\\\\{0,1,\\\\dots,2000\\\\}$ such that every $n\\\\in\\\\{0,\\\\dots,2000\\\\}$ has $\\\\sigma_A(n)\\\\ge1$ and $\\\\sigma_A(n)\\\\le 8$, where $\\\\sigma_A(n)$ is the number of ordered pairs $(a,a')\\\\in A^2$ with $a+a'=n$.\",\"candidate_format\":\"A JSON array of distinct integers, each between 0 and 2000 inclusive (the elements of A).\",\"checker_code\":\"def check(candidate) -> bool:\\n    try:\\n        N = 2000\\n        K = 8\\n        if not isinstance(candidate, list):\\n            return False\\n        if len(candidate) > N + 1:\\n            return False\\n        for x in candidate:\\n            if isinstance(x, bool) or not isinstance(x, int):\\n                return False\\n            if x < 0 or x > N:\\n                return False\\n        if len(set(candidate)) != len(candidate):\\n            return False\\n        A = sorted(candidate)\\n        cnt = [0] * (N + 1)\\n        L = len(A)\\n        for i in range(L):\\n            a = A[i]\\n            for j in range(i, L):\\n                s = a + A[j]\\n                if s > N:\\n                    break\\n                if i == j:\\n                    cnt[s] += 1\\n                else:\\n                    cnt[s] += 2\\n                if cnt[s] > K:\\n                    return False\\n        for n in range(N + 1):\\n            if cnt[n] < 1 or cnt[n] > K:\\n                return False\\n        return True\\n    except Exception:\\n        return False\"}",
+  "structured_output": {
+   "statement": "For a finite set $A\\subseteq\\mathbb N_0$ and $n\\in\\mathbb N_0$ let $\\sigma_A(n)=|\\{(a,a')\\in A^2: a+a'=n\\}|$ be the number of ordered representations. For $k\\in\\mathbb N$ let $N_k\\in\\mathbb N_0\\cup\\{\\infty\\}$ be the supremum of all $N$ for which some $A\\subseteq\\{0,1,\\dots,N\\}$ satisfies $\\{0,1,\\dots,N\\}\\subseteq A+A$ and $\\sigma_A(n)\\le k$ for every $0\\le n\\le N$. A compactness argument shows that $N_k=\\infty$ exactly when some $A\\subseteq\\mathbb N_0$ has $A+A=\\mathbb N_0$ and $\\sup_n\\sigma_A(n)\\le k$. Problem: is $N_8$ finite? More concretely, how fast does the largest attainable $N$ grow as $k=8,9,10,\\dots$ increases? Equivalently, for each $N$, what is the smallest possible value of $\\max_{n\\le N}\\sigma_A(n)$ over all $A$ with $\\{0,\\dots,N\\}\\subseteq A+A$? Does this smallest value grow faster than every constant, and if so, at what rate in $N$?",
+   "grounding": "This extends the section \"Result: An explicit economical additive basis\" (Jain–Pham–Sawhney–Zakharov, Erdős #29). That paper builds an explicit $A$ with $A+A=\\mathbb N_0$ and $\\sigma_A(n)\\le n^{c/\\log\\log n}$. Its digit-by-digit construction uses Ruzsa's modular bases of $\\mathbb Z/p^2\\mathbb Z$, whose representation counts are bounded by a constant. The gap is between this $n^{o(1)}$ upper bound and the known lower bounds, which only say that $\\sigma_A$ cannot stay below a small absolute constant. From memory: Grekos–Haddad–Helou–Pihko showed $\\limsup\\sigma_A\\ge6$, and Borwein–Choi–Chu raised this to $\\ge 8$. By compactness these bounds imply $N_k<\\infty$ for $k\\le7$. Nothing is known about $N_8$ or about the finite growth rate. The finite question measures how far the \"bounded modular basis\" ingredient can be pushed on long initial segments.",
+   "why_hard": "Greedy and random constructions give either gaps in the coverage or representation counts that grow like $\\log N$. Erdős's probabilistic method naturally produces $\\sigma\\asymp\\log n$, not a constant. Ruzsa-type modular bases keep the counts bounded modulo $m$, but lifting them to the integers $\\{0,\\dots,N\\}$ breaks the bound near the boundary and across carries. The mixed-radix trick used for Erdős #29 multiplies constants over the digits, which is why its bound is $n^{o(1)}$ and not a constant. On the lower-bound side, the Borwein–Choi–Chu argument works with generating functions on the unit circle and gives only a small absolute constant. Neither approach seems to say whether $N_8$ is finite, and exhaustive search grows exponentially in $N$.",
+   "why_important": "If $N_8$ (or any $N_k$) is shown to be finite, that would be quantitative evidence for the Erdős–Turán philosophy that bases cannot be uniformly economical. If $N_k=\\infty$ for some $k$, there would be a basis with bounded representation function, which would disprove a famous conjecture. A good finite growth rate for the minimal value of $\\max_{n\\le N}\\sigma_A(n)$ would also say how close the explicit $n^{o(1)}$ construction is to optimal.",
+   "resembles_known": "Erdős–Turán conjecture for additive bases (finite/threshold version)",
+   "novelty_confidence": 0.6,
+   "finite_form": "Take $N=2000$ and $k=8$. Find a set $A\\subseteq\\{0,1,\\dots,2000\\}$ such that every $n\\in\\{0,\\dots,2000\\}$ has $\\sigma_A(n)\\ge1$ and $\\sigma_A(n)\\le 8$, where $\\sigma_A(n)$ is the number of ordered pairs $(a,a')\\in A^2$ with $a+a'=n$.",
+   "candidate_format": "A JSON array of distinct integers, each between 0 and 2000 inclusive (the elements of A).",
+   "checker_code": "def check(candidate) -> bool:\n    try:\n        N = 2000\n        K = 8\n        if not isinstance(candidate, list):\n            return False\n        if len(candidate) > N + 1:\n            return False\n        for x in candidate:\n            if isinstance(x, bool) or not isinstance(x, int):\n                return False\n            if x < 0 or x > N:\n                return False\n        if len(set(candidate)) != len(candidate):\n            return False\n        A = sorted(candidate)\n        cnt = [0] * (N + 1)\n        L = len(A)\n        for i in range(L):\n            a = A[i]\n            for j in range(i, L):\n                s = a + A[j]\n                if s > N:\n                    break\n                if i == j:\n                    cnt[s] += 1\n                else:\n                    cnt[s] += 2\n                if cnt[s] > K:\n                    return False\n        for n in range(N + 1):\n            if cnt[n] < 1 or cnt[n] > K:\n                return False\n        return True\n    except Exception:\n        return False"
+  },
+  "ttft_ms": 22808,
+  "type": "result",
+  "duration_ms": 43606,
+  "uuid": "8673297a-1a01-4ea0-91b7-fb3056727ff5",
+  "ttft_stream_ms": 1392,
+  "time_to_request_ms": 114,
+  "first_content_frame_ms": 1393,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}

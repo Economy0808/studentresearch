@@ -1,0 +1,167 @@
+{
+ "model": "opus",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Below is a context pack summarizing recent results in one area of mathematics.\n\n<context>\n# DRAFT — additive combinatorics pack\n\n## Definitions\n\nThroughout, $\\mathbb N=\\{1,2,3,\\dots\\}$, $\\mathbb N_0=\\mathbb N\\cup\\{0\\}$ and $[N]=\\{1,\\dots,N\\}$. For positive functions, $f\\ll g$ (equivalently $f=O(g)$) means $f\\le Cg$ for a constant $C$; a subscript, as in $\\ll_\\varepsilon$, means $C$ may depend on that parameter; $f=o(g)$ means $f/g\\to0$.\n\n**Sumsets and representation functions.** For $A,B\\subseteq\\mathbb Z$, $A+B=\\{a+b:a\\in A,\\ b\\in B\\}$, $A-B=\\{a-b:a\\in A,\\ b\\in B\\}$, and $hA=A+\\dots+A$ ($h$ summands, repetitions allowed). The number of ordered representations of $n$ as a sum of two elements of $A$ is $1_A*1_A(n)=|\\{(a,a')\\in A^2:\\ a+a'=n\\}|$; the number of unordered representations is $r_A(n)=|\\{(a,a')\\in A^2:\\ a\\le a',\\ a+a'=n\\}|$. Thus $n\\in A+A$ iff $r_A(n)\\ge1$.\n\n**Additive bases.** A set $A\\subseteq\\mathbb N_0$ is an *asymptotic basis of order $h$* if $hA$ contains every sufficiently large integer. An asymptotic basis $A$ of order $2$ is *minimal* if $A\\setminus\\{a\\}$ is not an asymptotic basis of order $2$ for every $a\\in A$ (equivalently, no proper subset of $A$ is an asymptotic basis of order $2$).\n\n**Sidon sets.** A set $A\\subseteq\\mathbb Z$ is a *Sidon set* ($B_2$ set) if $a+b=c+d$ with $a,b,c,d\\in A$ forces $\\{a,b\\}=\\{c,d\\}$; equivalently all sums $a+b$ with $a\\le b$ are distinct, equivalently all differences $a-b$ with $a\\ne b$ are distinct.\n\n**Perfect difference sets.** Let $v\\ge1$. A finite set $B\\subset\\mathbb Z$ whose elements are pairwise distinct modulo $v$ is a *perfect difference set modulo $v$* if every nonzero residue class modulo $v$ equals $b-b'$ for exactly one ordered pair $(b,b')$ of distinct elements of $B$. Then $|B|(|B|-1)=v-1$; Singer's theorem produces such sets with $v=q^2+q+1$ and $|B|=q+1$ for every prime power $q$. A finite set $A$ *extends to a perfect difference set modulo $v$* if $A\\subseteq B$ for some such $B$.\n\n**Arithmetic progressions.** A $k$-term arithmetic progression ($k$-AP) is $x,x+d,\\dots,x+(k-1)d$; it is non-trivial if $d\\ne0$. Let $r_k(N)$ be the largest size of a set $A\\subseteq[N]$ containing no non-trivial $k$-AP. Roth showed $r_3(N)=o(N)$ and Szemerédi showed $r_k(N)=o(N)$ for every $k$. A *finite colouring* of a set $X$ is a map from $X$ to a finite set; a subset of $X$ is *monochromatic* if the map is constant on it.\n\n**Densities.** The upper density of $A\\subseteq\\mathbb N$ is $\\overline d(A)=\\limsup_{N\\to\\infty}|A\\cap[N]|/N$ and its upper Banach density is $d^*(A)=\\lim_{N\\to\\infty}\\sup_{M\\ge0}|A\\cap\\{M+1,\\dots,M+N\\}|/N$. If $\\overline d(A)>0$ then $d^*(A)>0$.\n\n**Sum-free sets.** A set $S\\subseteq\\mathbb Z$ is *sum-free* if there are no $x,y,z\\in S$ (not necessarily distinct) with $x+y=z$.\n\n**Typical shape of a problem.** Questions in this area usually ask for the order of growth (or the exact asymptotics) of an extremal function such as the largest size of a subset of $[N]$ with a prescribed additive property, whether a limit or a density exists, or whether an infinite set with prescribed additive structure exists.\n\n## Result: Strong bounds for 3-term progressions\nStatement. There is an absolute constant $\\beta>0$ such that every set $A\\subseteq[N]$ with $|A|\\ge 2^{-O((\\log N)^{\\beta})}\\,N$ contains a non-trivial $3$-term arithmetic progression. In particular $r_3(N)\\ll_C N/(\\log N)^{C}$ for every $C>0$. (Earlier results gave a $3$-AP only for $|A|\\ge N/(\\log N)^{1+c}$, for a constant $c>0$.)\n\nProof idea. The authors first develop new analytic methods for the analogous question over finite fields and then adapt versions of those methods to the integers.\n\nSource: Kelley and Meka, 2023, arXiv:2302.05537, Erdős #140.\n\n## Result: Sidon sets that are asymptotic bases of order 3\nStatement. There exists a Sidon set $S\\subseteq\\mathbb N$ (necessarily infinite) that is an asymptotic basis of order $3$: every sufficiently large integer is a sum of three elements of $S$. This answers a question of Erdős, Sárközy and Sós.\n\nProof idea. The proof relies on a deep result of Sawin on the $\\mathbb F_q[t]$-analogue of Montgomery's conjecture for convolutions of the von Mangoldt function.\n\nSource: Pilatte, 2023, arXiv:2303.09659, Erdős #157.\n\n## Result: An explicit economical additive basis\nStatement. There exist an explicit set $A\\subseteq\\mathbb N_0$ and absolute constants $C,c>0$ such that $A+A=\\mathbb N_0$ and the number $\\sigma_A(n)$ of representations $n=a+a'$ with $a,a'\\in A$ satisfies $\\sigma_A(n)\\le C\\,n^{c/\\log\\log n}$ for all sufficiently large $n$; in particular $\\sigma_A(n)=n^{o(1)}$, i.e. $\\sigma_A(n)=o(n^{\\varepsilon})$ for every $\\varepsilon>0$. (The existence of such a set was proved earlier by Erdős by probabilistic methods; the point is an explicit construction.)\n\nProof idea. Write integers in the mixed radix system $(p_1^2,p_2^2,\\dots)$ with primes $p_k\\equiv3\\pmod 8$ chosen as the least such prime in $[f(k),2f(k))$ for an increasing function $f$, restrict the $k$-th digit to a modular additive basis of $\\mathbb Z/p_k^2\\mathbb Z$ with bounded representation counts (Ruzsa's construction), and count digit choices digit by digit to bound the number of representations.\n\nSource: Jain, Pham, Sawhney and Zakharov, 2024, arXiv:2405.08650, Erdős #29.\n\n## Result: A finite Sidon set that extends to no perfect difference set\nStatement. Erdős conjectured that every finite Sidon set $A\\subset\\mathbb N$ extends to a perfect difference set modulo $p^2+p+1$ for some prime $p$. The Sidon set $\\{1,2,4,8,13\\}$ does not extend to a perfect difference set modulo any $v>0$, so it is a counterexample to this conjecture. (Hall had published an earlier, different counterexample, $\\{1,3,9,10,13\\}$, in 1947.)\n\nProof idea. A perfect difference set $B$ modulo $v$ gives a cyclic projective plane with the polarity $x\\leftrightarrow B-x$; Baer's parity results on its absolute points (the points $x$ with $2x\\in B$) yield a contradiction for any $B$ containing $\\{1,2,4,8,13\\}$.\n\nSource: Alexeev and Mixon, 2025, arXiv:2510.19804, Erdős #707.\n\n## Result: Independence of three properties of order-2 bases\nStatement. For an asymptotic basis $A$ of order $2$ consider (P1) $r_A(n)\\to\\infty$; (P2) $A=B\\cup C$ for disjoint asymptotic bases $B,C$ of order $2$; (P3) $A$ contains a minimal asymptotic basis of order $2$. Erdős and Nathanson proved that if $r_A(n)>C\\log n$ for all large $n$, for a constant $C>1/\\log(4/3)$, then (P2) and (P3) both hold. Larsen proved that for slower growth of $r_A$ the three properties are independent: for each of the eight possible true/false combinations of (P1), (P2), (P3) there is an asymptotic basis of order $2$ with exactly that combination.\n\nProof idea. The bases are produced by a randomized iterative construction carried out inductively on exponentially growing intervals.\n\nSource: Larsen, 2026, arXiv:2603.03472, Erdős #869, #871 (the paper also answers the first question of Erdős #868; the $\\epsilon\\log n$ strengthening is in a separate preprint; #871 was first settled in an earlier note by the same author).\n\n## Result: Colouring versus density for progression-free subsets\nStatement. For every integer $k\\ge3$ and every real $\\mu\\in(0,\\tfrac{k-1}{k})$ there is a set $X=X(k,\\mu)\\subseteq\\mathbb N$ such that (i) every finite colouring of $X$ has a monochromatic $k$-term arithmetic progression, and (ii) every finite $Y\\subseteq X$ has a subset $Z\\subseteq Y$ with $|Z|\\ge\\mu|Y|$ containing no $k$-term arithmetic progression. The range of $\\mu$ is sharp, since the theorem fails for $\\mu>\\tfrac{k-1}{k}$.\n\nProof idea. Prove a Hales–Jewett (combinatorial lines) version by a partite construction over hypergraphs with large chromatic number and a fractional $\\mu$-property, then transfer it to the integers by an injective base-$T$ style encoding of the Hales–Jewett cube under which combinatorial lines become arithmetic progressions.\n\nSource: Reiher, Rödl and Sales, 2023, arXiv:2311.08556, Erdős #847.\n\n## Result: Infinite sumsets with a shift inside dense sets\nStatement. Let $A\\subseteq\\mathbb N$ have positive upper Banach density (in particular, positive upper density suffices). Then there exist an infinite set $B\\subseteq A$ and an integer $t\\ge1$ such that $\\{b_1+b_2:\\ b_1,b_2\\in B,\\ b_1\\ne b_2\\}+t\\subseteq A$. The shift $t$ cannot be dropped and the restriction $b_1\\ne b_2$ cannot be removed.\n\nProof idea. Via a Furstenberg correspondence the statement is reduced to a dynamical one about \"Erdős progressions\", dynamical analogues of $3$-term progressions; one then constructs a measure on pairs lying above $3$-term progressions in the Kronecker factor and shows that almost every pair yields an Erdős progression.\n\nSource: Kra, Moreira, Richter and Robertson, 2022, arXiv:2206.12377, Erdős #656.\n\n## Result: Large sum-free subsets of sets of integers\nStatement. There is an absolute constant $c>0$ such that every finite set $A$ of $n$ integers contains a sum-free subset $A'$ with $|A'|\\ge n/3+c\\log\\log n$. (Earlier bounds: $n/3$ by an argument of Erdős, $(n+1)/3$ by Alon and Kleitman, and $(n+2)/3$ by Bourgain.)\n\nProof idea. As in the classical argument, take the elements $a\\in A$ whose dilate $ax$ lands in the sum-free interval $(1/3,2/3)$ of the torus for a well-chosen $x$; the improvement reduces to showing that the $L^1$ norm of $\\sum_{a\\in A}\\big(1_{(1/3,2/3)}(ax)-\\tfrac13\\big)$ is $\\gg\\log\\log n$, which is proved by a structure theory for sets with small $L^1$ norm (small additive dimension, structured distribution modulo small primes) together with an explicit test function.\n\nSource: Bedert, 2025, arXiv:2502.08624.\n\n## Result: Improved bounds for Szemerédi's theorem\nStatement. For every integer $k\\ge5$ there is a constant $c_k>0$ such that $r_k(N)\\ll_k N\\exp\\!\\big(-(\\log\\log N)^{c_k}\\big)$.\n\nProof idea. Combine recent quasipolynomial bounds for the inverse theorem for the Gowers uniformity norms with the Heath-Brown–Szemerédi density increment strategy as reformulated by Green and Tao.\n\nSource: Leng, Sah and Sawhney, 2024, arXiv:2402.17995.\n\n## Format examples\nThe following three statements are already solved. They are included only to show the usual phrasing and level of precision of an Erdős-style problem (define every symbol, ask one or two sharp questions). They are not to be posed again.\n\nExample 1. Let $f(N)$ be the size of the largest Sidon subset of $\\{1,\\dots,N\\}$ and let $A(N)$ be the number of Sidon subsets of $\\{1,\\dots,N\\}$. Is it true that $A(N)/2^{f(N)}\\to\\infty$? Is it true that $A(N)=2^{(1+o(1))f(N)}$?\n\nExample 2. If $\\mathbb N$ is $2$-coloured, must there exist a monochromatic $3$-term arithmetic progression $x,x+d,x+2d$ such that $d>x$?\n\nExample 3. Is it true that, given any infinite set $A\\subset\\mathbb N$, there is a set $B$ of density $0$ such that $A+B$ contains all except finitely many integers?\n\n</context>\n\nTask: pose ONE problem in this area that you believe is currently unsolved, grounded in the context above, of the form \"find a construction, counterexample, or extremal object\", so that a proposed answer can be checked mechanically. Focus on the section titled \"Result: Strong bounds for 3-term progressions\": start from a gap, a boundary case, or a natural extension that the results in that section leave open.\n\nRequirements\n- statement: the general (infinite-family) problem, precise and self-contained, at most 150 words. Define every symbol.\n- grounding: which results in the context the problem extends, and exactly where the gap is (cite section titles).\n- why_hard: the obvious approaches and the specific reason each one fails.\n- why_important: what would follow if it were solved.\n- resembles_known: the name of any well-known conjecture or theorem this resembles, or null.\n- novelty_confidence: your probability (0 to 1) that the general problem is genuinely open.\n- finite_form: one concrete finite instance (fix the parameters, e.g. n = 12) whose solution is a finite object (a set, a sequence, a graph, a coloring) and which you believe is still hard at that size, not solvable by a quick brute-force search.\n- candidate_format: the exact JSON shape a solver must submit, e.g. \"a JSON array of distinct positive integers at most 100\".\n- checker_code: a complete Python function `def check(candidate) -> bool` returning True exactly when the candidate solves finite_form. Standard library only, deterministic, finishes within 10 seconds on any input of the stated shape, and returns False (never raises) on malformed input.\n\nDo not restate a named conjecture. The checker must test the finite_form you stated, nothing else.\n",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "statement": {
+    "type": "string"
+   },
+   "grounding": {
+    "type": "string"
+   },
+   "why_hard": {
+    "type": "string"
+   },
+   "why_important": {
+    "type": "string"
+   },
+   "resembles_known": {
+    "type": [
+     "string",
+     "null"
+    ]
+   },
+   "novelty_confidence": {
+    "type": "number",
+    "minimum": 0,
+    "maximum": 1
+   },
+   "finite_form": {
+    "type": "string"
+   },
+   "candidate_format": {
+    "type": "string"
+   },
+   "checker_code": {
+    "type": "string"
+   }
+  },
+  "required": [
+   "statement",
+   "grounding",
+   "why_hard",
+   "why_important",
+   "resembles_known",
+   "novelty_confidence",
+   "finite_form",
+   "candidate_format",
+   "checker_code"
+  ],
+  "additionalProperties": false
+ },
+ "started_at": "2026-10-18T03:41:58+00:00",
+ "finished_at": "2026-10-18T03:42:43+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 42494,
+  "stop_reason": "tool_use",
+  "session_id": "20f0fba4-fce0-4fe3-9cb2-f912344ca667",
+  "total_cost_usd": 0.13546,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 7149,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 3913,
+   "output_tokens_details": {
+    "thinking_tokens": 2074
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 7149,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 3913,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 7149,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 7149
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 3913,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 7149,
+    "webSearchRequests": 0,
+    "costUSD": 0.13546,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 2074,
+    "canonicalModel": "claude-opus-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"statement\":\"Let $r_3(N)$ be the largest size of a set $A\\\\subseteq[N]=\\\\{1,\\\\dots,N\\\\}$ with no non-trivial 3-term arithmetic progression $x,x+d,x+2d$ ($d\\\\ne0$). Behrend's construction, together with its later constant-factor refinements, gives $r_3(N)\\\\ge N\\\\exp(-C\\\\sqrt{\\\\log N})$. Construct, for some fixed $\\\\gamma<1/2$ and infinitely many $N$, a set $A_N\\\\subseteq[N]$ with no 3-term progression and $|A_N|\\\\ge N\\\\exp(-(\\\\log N)^{\\\\gamma})$. Equivalently: is $\\\\limsup_{N\\\\to\\\\infty}\\\\log\\\\log(N/r_3(N))/\\\\log\\\\log N<1/2$? Or, in the other direction, can one show $r_3(N)\\\\le N\\\\exp(-c(\\\\log N)^{1/2})$ for some $c>0$, which would mean the Behrend exponent $1/2$ is optimal?\",\"grounding\":\"This builds on the section \\\"Result: Strong bounds for 3-term progressions\\\" (Kelley–Meka). That result gives the upper bound $r_3(N)\\\\le N\\\\,2^{-c(\\\\log N)^{\\\\beta}}$ for some absolute $\\\\beta>0$; the exponent obtained is about $1/12$, and later work raised it to about $1/9$. The best known lower bound has the form $N\\\\exp(-C(\\\\log N)^{1/2})$ (Behrend, with constant improvements by Elkin, Green–Wolf and Elsholtz et al.). So the true exponent $\\\\gamma^*$ in $r_3(N)=N\\\\exp(-(\\\\log N)^{\\\\gamma^*+o(1)})$, if it exists, is only known to lie in $[\\\\beta,1/2]$. On the construction side, the open question is whether the exponent $1/2$ can be lowered. The finite form asks for a large explicit 3-AP-free set at a fixed moderate size.\",\"why_hard\":\"1. Behrend-type constructions (lattice points on a sphere, or in thin annuli, mapped to the integers by a digit encoding) have a built-in tradeoff. The loss from the dimension $d$ and the loss from the base balance exactly at $\\\\exp(-\\\\sqrt{\\\\log N})$. Refinements of the convex-body or annulus step only change the constant.\\n2. Algebraic constructions over $\\\\mathbb F_3^n$ or other groups only reach power-saving densities. Lifting them to $\\\\mathbb Z$ loses too much.\\n3. On the upper-bound side, Kelley–Meka-type density increment arguments lose a polylogarithmic factor in each step of the almost-periodicity and sifting machinery. The methods give no indication that an exponent of $1/2$ can be reached.\\n4. For the finite instance, exact computation of $r_3(N)$ with branch-and-bound stops working at a few hundred. Greedy and digit (Salem–Spencer) constructions fall well short of the target, and local search gets stuck in plateaus.\",\"why_important\":\"A construction with $\\\\gamma<1/2$ would be the first change in Behrend's exponent since 1946. It would affect every application that inherits Behrend's bound: Ruzsa–Szemerédi graphs and induced matchings, lower bounds in property testing, number-on-forehead communication complexity, and matrix multiplication barriers. A matching upper bound would instead pin down $r_3(N)$ up to the constant in the exponent and complete the Kelley–Meka programme.\",\"resembles_known\":\"Behrend's construction / the problem of the true order of r_3(N) (Roth's theorem bounds)\",\"novelty_confidence\":0.85,\"finite_form\":\"For $N=1000$: find a set $A\\\\subseteq\\\\{1,\\\\dots,1000\\\\}$ with $|A|\\\\ge 140$ containing no non-trivial 3-term arithmetic progression. The base-3 digit construction (digits in $\\\\{0,1\\\\}$) gives only about 113 elements, and the exact value of $r_3(1000)$ is unknown.\",\"candidate_format\":\"a JSON array of at least 140 distinct integers, each between 1 and 1000 inclusive\",\"checker_code\":\"def check(candidate) -> bool:\\n    try:\\n        if not isinstance(candidate, list):\\n            return False\\n        vals = []\\n        for x in candidate:\\n            if isinstance(x, bool) or not isinstance(x, int):\\n                return False\\n            if x < 1 or x > 1000:\\n                return False\\n            vals.append(x)\\n        s = set(vals)\\n        if len(s) != len(vals):\\n            return False\\n        if len(vals) < 140:\\n            return False\\n        v = sorted(vals)\\n        n = len(v)\\n        for i in range(n):\\n            a = v[i]\\n            for j in range(i + 1, n):\\n                c = v[j]\\n                if (a + c) % 2 == 0 and (a + c) // 2 in s:\\n                    return False\\n        return True\\n    except Exception:\\n        return False\"}",
+  "structured_output": {
+   "statement": "Let $r_3(N)$ be the largest size of a set $A\\subseteq[N]=\\{1,\\dots,N\\}$ with no non-trivial 3-term arithmetic progression $x,x+d,x+2d$ ($d\\ne0$). Behrend's construction, together with its later constant-factor refinements, gives $r_3(N)\\ge N\\exp(-C\\sqrt{\\log N})$. Construct, for some fixed $\\gamma<1/2$ and infinitely many $N$, a set $A_N\\subseteq[N]$ with no 3-term progression and $|A_N|\\ge N\\exp(-(\\log N)^{\\gamma})$. Equivalently: is $\\limsup_{N\\to\\infty}\\log\\log(N/r_3(N))/\\log\\log N<1/2$? Or, in the other direction, can one show $r_3(N)\\le N\\exp(-c(\\log N)^{1/2})$ for some $c>0$, which would mean the Behrend exponent $1/2$ is optimal?",
+   "grounding": "This builds on the section \"Result: Strong bounds for 3-term progressions\" (Kelley–Meka). That result gives the upper bound $r_3(N)\\le N\\,2^{-c(\\log N)^{\\beta}}$ for some absolute $\\beta>0$; the exponent obtained is about $1/12$, and later work raised it to about $1/9$. The best known lower bound has the form $N\\exp(-C(\\log N)^{1/2})$ (Behrend, with constant improvements by Elkin, Green–Wolf and Elsholtz et al.). So the true exponent $\\gamma^*$ in $r_3(N)=N\\exp(-(\\log N)^{\\gamma^*+o(1)})$, if it exists, is only known to lie in $[\\beta,1/2]$. On the construction side, the open question is whether the exponent $1/2$ can be lowered. The finite form asks for a large explicit 3-AP-free set at a fixed moderate size.",
+   "why_hard": "1. Behrend-type constructions (lattice points on a sphere, or in thin annuli, mapped to the integers by a digit encoding) have a built-in tradeoff. The loss from the dimension $d$ and the loss from the base balance exactly at $\\exp(-\\sqrt{\\log N})$. Refinements of the convex-body or annulus step only change the constant.\n2. Algebraic constructions over $\\mathbb F_3^n$ or other groups only reach power-saving densities. Lifting them to $\\mathbb Z$ loses too much.\n3. On the upper-bound side, Kelley–Meka-type density increment arguments lose a polylogarithmic factor in each step of the almost-periodicity and sifting machinery. The methods give no indication that an exponent of $1/2$ can be reached.\n4. For the finite instance, exact computation of $r_3(N)$ with branch-and-bound stops working at a few hundred. Greedy and digit (Salem–Spencer) constructions fall well short of the target, and local search gets stuck in plateaus.",
+   "why_important": "A construction with $\\gamma<1/2$ would be the first change in Behrend's exponent since 1946. It would affect every application that inherits Behrend's bound: Ruzsa–Szemerédi graphs and induced matchings, lower bounds in property testing, number-on-forehead communication complexity, and matrix multiplication barriers. A matching upper bound would instead pin down $r_3(N)$ up to the constant in the exponent and complete the Kelley–Meka programme.",
+   "resembles_known": "Behrend's construction / the problem of the true order of r_3(N) (Roth's theorem bounds)",
+   "novelty_confidence": 0.85,
+   "finite_form": "For $N=1000$: find a set $A\\subseteq\\{1,\\dots,1000\\}$ with $|A|\\ge 140$ containing no non-trivial 3-term arithmetic progression. The base-3 digit construction (digits in $\\{0,1\\}$) gives only about 113 elements, and the exact value of $r_3(1000)$ is unknown.",
+   "candidate_format": "a JSON array of at least 140 distinct integers, each between 1 and 1000 inclusive",
+   "checker_code": "def check(candidate) -> bool:\n    try:\n        if not isinstance(candidate, list):\n            return False\n        vals = []\n        for x in candidate:\n            if isinstance(x, bool) or not isinstance(x, int):\n                return False\n            if x < 1 or x > 1000:\n                return False\n            vals.append(x)\n        s = set(vals)\n        if len(s) != len(vals):\n            return False\n        if len(vals) < 140:\n            return False\n        v = sorted(vals)\n        n = len(v)\n        for i in range(n):\n            a = v[i]\n            for j in range(i + 1, n):\n                c = v[j]\n                if (a + c) % 2 == 0 and (a + c) // 2 in s:\n                    return False\n        return True\n    except Exception:\n        return False"
+  },
+  "ttft_ms": 26695,
+  "type": "result",
+  "duration_ms": 42640,
+  "uuid": "b9aaf502-db36-4fc0-b541-3f8f50e4bb7f",
+  "ttft_stream_ms": 2266,
+  "time_to_request_ms": 106,
+  "first_content_frame_ms": 2268,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}
