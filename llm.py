@@ -11,6 +11,7 @@ from store import now
 
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
+CALL_TIMEOUT = 1800  # seconds per CLI call; pipeline.solve stops retrying a cell after TIME_BUDGET_ATTEMPTS of these
 # Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
 STOP_MARKERS = ("usage limit", "rate limit", "you've hit your", "you've reached your", "usage credits", "extra usage",
                 "spend limit", "credit balance", "authenticate", "authentication error", "oauth", "/login",
@@ -117,9 +118,9 @@ def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}  # bill the Max plan, never the API
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", cwd=cwd, timeout=1800, env=env)
+                           errors="replace", cwd=cwd, timeout=CALL_TIMEOUT, env=env)
     except subprocess.TimeoutExpired as e:
-        return {"is_error": True, "result": "timeout after 1800s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
+        return {"is_error": True, "result": f"timeout after {CALL_TIMEOUT}s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
     except OSError as e:
         return {"is_error": True, "result": f"could not start claude CLI: {e}"}
     if not p.stdout.strip():

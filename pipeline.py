@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import sys
+from collections import Counter
 from pathlib import Path
 
 import llm
@@ -11,6 +12,7 @@ from store import append_jsonl, new_id, now, read_jsonl, write_jsonl
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
+TIME_BUDGET_ATTEMPTS = 2  # timed-out solve attempts per (problem, solver) before the cell is recorded as unsolved
 
 _STR = {"type": "string"}
 _SCORE = {"type": ["integer", "null"], "minimum": 1, "maximum": 5}
@@ -123,10 +125,20 @@ def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
     schema = _schema(SOLVE_PROPS)
     sol_path = data_dir / "solutions.jsonl"
     done = {(s["problem_id"], s["solver"]) for s in read_jsonl(sol_path)}
+    timeouts = Counter((f["target_id"], f["model"]) for f in read_jsonl(data_dir / "failures.jsonl")
+                       if f.get("stage") == "solve" and "timeout" in str(f.get("error", "")))
     made = 0
     for p in all_problems(data_dir):
         for model in models:
             if (p["id"], model) in done:
+                continue
+            if timeouts[(p["id"], model)] >= TIME_BUDGET_ATTEMPTS:
+                # time budget: after 2 timed-out attempts the cell is recorded as unsolved and never retried
+                append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
+                                        "text": f"[pipeline] No answer within the time budget ({TIME_BUDGET_ATTEMPTS} attempts x {llm.CALL_TIMEOUT} s each). This row was written by the pipeline, not by the model.",
+                                        "claimed_status": "unsolved", "candidate": None, "budget_exceeded": True,
+                                        "created_at": now()})
+                made += 1
                 continue
             prompt = fill(template, statement=p["statement"], finite_form=p.get("finite_form"),
                           candidate_format=p.get("candidate_format"))
@@ -175,7 +187,7 @@ def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
                 rate(model, "problem", p["id"], prompt, EVAL_PROBLEM_PROPS)
     for s in read_jsonl(data_dir / "solutions.jsonl"):
         p = problems.get(s["problem_id"])
-        if p is None:
+        if p is None or s.get("budget_exceeded"):  # pipeline-written rows are not solutions: nothing to rate
             continue
         cand = s.get("candidate")
         prompt = fill(t_sol, statement=p["statement"], finite_form=p.get("finite_form"), text=s["text"],
@@ -246,6 +258,8 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
         raise SystemExit(f"export-human refused: solution ids must look like S-xxxxxx; offending: {bad_s}")
     sols: dict[str, list[dict]] = {}
     for s in sols_all:
+        if s.get("budget_exceeded"):  # pipeline-written row, not a solution: raters never see it
+            continue
         sols.setdefault(s["problem_id"], []).append({"id": s["id"], "text": s["text"], "candidate": s.get("candidate")})
     for v in sols.values():
         v.sort(key=lambda x: x["id"])  # file order is solver order; blind.json must not carry it

@@ -124,7 +124,7 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         assert cmd[cmd.index("--mcp-config") + 1] == '{"mcpServers":{}}', cmd
         assert json.loads(cmd[cmd.index("--json-schema") + 1])["type"] == "object"
         assert seen["kw"]["input"] == "PROMPT" and seen["kw"]["encoding"] == "utf-8"
-        assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == 1800, seen["kw"]
+        assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == llm.CALL_TIMEOUT, seen["kw"]
         neutral = Path(tempfile.gettempdir()) / "claude_cli_cwd"  # outside the repo: no project memory attaches
         assert Path(seen["kw"]["cwd"]) == neutral and neutral.is_dir()
         seen["stdout_next"] = "not json"
@@ -296,6 +296,28 @@ def check_solve(tmp: Path, data: Path) -> None:
     fails = read_jsonl(d / "failures.jsonl")
     assert len(fails) == 1 and "claimed_status out of range" in fails[0]["error"], fails
     assert not (d / "solutions.jsonl").exists()
+
+
+def check_time_budget(tmp: Path, data: Path) -> None:
+    import pipeline, llm
+    d3 = tmp / "budget" / "data"
+    p = {"id": "P-b0d9e7", "source": "sonnet", "kind": "open", "context_id": "x", "focus": "Result: A", "gen_key": "x:open:sonnet:0",
+         "statement": "[fake sonnet] budget test", "grounding": "g", "why_hard": "h", "why_important": "w", "resembles_known": None,
+         "novelty_confidence": 0.5, "finite_form": None, "candidate_format": None, "checker_code": None, "created_at": "2026-10-18T00:00:00+00:00"}
+    append_jsonl(d3 / "problems.jsonl", p)
+    for _ in range(2):
+        append_jsonl(d3 / "failures.jsonl", {"stage": "solve", "target_id": p["id"], "model": "fable", "error": f"timeout after {llm.CALL_TIMEOUT}s", "created_at": "2026-10-18T00:00:00+00:00"})
+    append_jsonl(d3 / "failures.jsonl", {"stage": "solve", "target_id": p["id"], "model": "opus", "error": f"timeout after {llm.CALL_TIMEOUT}s", "created_at": "2026-10-18T00:00:00+00:00"})
+    assert pipeline.solve(d3, dry_run=True) == 3, "sonnet and opus are solved by the fake; fable gets a budget row"
+    sols = read_jsonl(d3 / "solutions.jsonl")
+    fab = next(s for s in sols if s["solver"] == "fable")
+    assert fab["budget_exceeded"] is True and fab["claimed_status"] == "unsolved" and fab["candidate"] is None and "[pipeline]" in fab["text"], fab
+    assert all(not s.get("budget_exceeded") for s in sols if s["solver"] != "fable"), "one timeout must not trigger the budget"
+    assert not (d3 / "raw" / "solve" / f"{p['id']}_fable.json").exists(), "the model must not be called for a budget row"
+    assert pipeline.solve(d3, dry_run=True) == 0, "idempotent"
+    assert pipeline.eval_ai(d3, dry_run=True) == 3 + 2 * 3, "problem x 3 raters + 2 real solutions x 3 raters; the budget row is not rated"
+    blind = json.loads(pipeline.export_human(d3, ["R1"]).read_text(encoding="utf-8"))
+    assert len(blind["problems"][0]["solutions"]) == 2, "budget row is not exported"
 
 
 def check_eval(tmp: Path, data: Path) -> None:
@@ -517,7 +539,7 @@ def check_analyze(tmp: Path, data: Path) -> None:
 
 
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
-          check_eval, check_verify, check_verify_errors, check_roundtrip, check_analyze]
+          check_time_budget, check_eval, check_verify, check_verify_errors, check_roundtrip, check_analyze]
 
 
 def main() -> None:

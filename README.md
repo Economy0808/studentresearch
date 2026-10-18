@@ -21,7 +21,7 @@ python run.py gen --context context/additive_comb.md --kind checkable --n 3
 python run.py solve
 python run.py eval
 ```
-사용량 한도로 `STOPPED`가 뜨면 기다렸다가 같은 명령을 다시 친다.
+사용량 한도로 `STOPPED`가 뜨면 기다렸다가 같은 명령을 다시 친다. 시간 예산: 한 (문제, 모델) 쌍이 30분 제한에 두 번 걸리면 다음 실행에서 모델을 다시 부르지 않고 "시간 초과로 미해결" 행을 기록한다. 이 행은 평가·평가자 페이지에서 제외되고 분석에서는 실패(0)로 센다.
 
 - 한 데이터 폴더에서는 한 번에 하나의 명령만 실행한다(`eval`과 `import-human`을 동시에 돌리면 평가 행이 사라질 수 있다).
 - 단계가 읽는 입력(`context/*.md`, `prompts/`, `human_problems.jsonl`)은 그 단계가 끝날 때까지 고정한다. 컨텍스트 팩을 고치면 `context_id`가 바뀌어 모든 모델의 생성이 처음부터 다시 시작된다.

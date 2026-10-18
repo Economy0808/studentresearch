@@ -79,6 +79,8 @@ def success(S, V, R):
     corr = sol.groupby("target_id")["correctness"].mean()
 
     def f(s):
+        if s.get("budget_exceeded") is True:  # pipeline-written time-budget row: a failed attempt
+            return 0.0
         vd = v.get(s["id"])
         if vd in ("pass", "fail"):
             return float(vd == "pass")
