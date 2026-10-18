@@ -54,7 +54,7 @@
 
 ## 4. 모델 호출 레이어
 
-모든 호출은 아래 한 형태다. `cwd`는 빈 디렉터리(`data/raw/_cwd/`)로 두어 CLAUDE.md·메모리가 섞이지 않게 한다.
+모든 호출은 아래 한 형태다. `cwd`는 **프로젝트 밖의** 빈 임시 디렉터리(`%TEMP%/claude_cli_cwd/`)로 둔다: 프로젝트 안의 폴더에서 호출하면 Claude Code가 그 프로젝트의 자동 메모리(연구 설명이 들어 있음)를 첫 메시지에 붙인다(2026-10-18 probe로 확인). `--strict-mcp-config --mcp-config '{"mcpServers":{}}'`로 계정 수준 MCP 커넥터 안내도 제거한다. 남는 것은 Claude Code 고유의 환경 블록(OS, 작업 폴더, 날짜, 모델 이름)과 계정 이메일 식별 문구이며, 세 모델에 동일하고 실험 정보를 담지 않는다. `probe`가 매번 이를 보여 준다.
 
 ```
 claude -p <user prompt> --model <sonnet|opus|fable> --output-format json
