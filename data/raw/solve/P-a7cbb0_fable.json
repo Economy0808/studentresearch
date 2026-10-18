@@ -33,102 +33,13 @@
   ],
   "additionalProperties": false
  },
- "started_at": "2026-10-18T06:51:44+00:00",
- "finished_at": "2026-10-18T07:08:42+00:00",
+ "started_at": "2026-10-18T08:52:40+00:00",
+ "finished_at": "2026-10-18T09:22:40+00:00",
  "cli_version": "2.1.302 (Claude Code)",
  "cli_output": {
-  "duration_api_ms": 1015109,
-  "stop_reason": "refusal",
-  "session_id": "fd48ec8d-59e7-4268-9792-28539b8c8f34",
-  "total_cost_usd": 4.5486755,
-  "usage": {
-   "input_tokens": 6,
-   "cache_creation_input_tokens": 4496,
-   "cache_read_input_tokens": 1782,
-   "output_tokens": 89165,
-   "output_tokens_details": {
-    "thinking_tokens": 89165
-   },
-   "server_tool_use": {
-    "web_search_requests": 0,
-    "web_fetch_requests": 0
-   },
-   "service_tier": "standard",
-   "cache_creation": {
-    "ephemeral_1h_input_tokens": 4496,
-    "ephemeral_5m_input_tokens": 0
-   },
-   "inference_geo": "global",
-   "iterations": [
-    {
-     "input_tokens": 2,
-     "output_tokens": 14250,
-     "cache_read_input_tokens": 594,
-     "cache_creation_input_tokens": 1564,
-     "cache_creation": {
-      "ephemeral_5m_input_tokens": 0,
-      "ephemeral_1h_input_tokens": 1564
-     },
-     "type": "message"
-    }
-   ],
-   "speed": "standard",
-   "fallback_credit": null
-  },
-  "modelUsage": {
-   "claude-fable-5-1": {
-    "inputTokens": 6,
-    "outputTokens": 89165,
-    "cacheReadInputTokens": 1782,
-    "cacheCreationInputTokens": 4496,
-    "webSearchRequests": 0,
-    "costUSD": 4.5486755,
-    "contextWindow": 1000000,
-    "maxOutputTokens": 64000,
-    "thinkingTokens": 89165,
-    "canonicalModel": "claude-fable-5-1",
-    "provider": "firstParty",
-    "costBasis": "list"
-   }
-  },
-  "permission_denials": [],
-  "terminal_reason": "api_error",
-  "fast_mode_state": "off",
-  "fast_mode_disabled_reason": "sdk_opt_in_required",
-  "subagent_stats": {
-   "spawned": 0,
-   "requested": {
-    "background": 0,
-    "foreground": 0,
-    "unset": 0
-   },
-   "started_in_background": 0,
-   "max_depth": 0,
-   "spawned_by_subagents": 0,
-   "completed": 0,
-   "failed": 0,
-   "killed": {
-    "parent": 0,
-    "user": 0,
-    "system": 0
-   },
-   "refused": {
-    "depth_limit": 0,
-    "concurrency_limit": 0,
-    "budget": 0
-   },
-   "by_type": {}
-  },
-  "safety_stops": 2,
   "is_error": true,
-  "num_turns": 3,
-  "subtype": "success",
-  "api_error_status": null,
-  "result": "API Error: Fable 5.1's safeguards flagged this message (https://www.anthropic.com/legal/aup). This sometimes happens with safe, normal conversations. Claude Code can't respond to this message with Fable 5.1.\n\nTry rephrasing the request in a new session or change your model.\n\nLearn more: https://support.claude.com/en/articles/15363606\n\nDetails: `[reasoning_extraction]`\n\nRequest ID: req_011Cg9H616aKAGmyezq96P68\n\nMessage ID: msg_011Cg9H61hZ5Vo27NoWPsKiN",
-  "type": "result",
-  "duration_ms": 1015267,
-  "uuid": "e0631f72-9f46-46a9-ab3a-7a617f6aa61f",
-  "queued_turn_count": 0,
-  "result_index": 0
+  "result": "timeout after 1800s",
+  "stdout": "",
+  "stderr": "strict mode: use allowUnionTypes to allow union type keyword at \"#/properties/candidate\" (strictTypes)\n"
  }
 }

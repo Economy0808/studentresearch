@@ -1,0 +1,143 @@
+{
+ "model": "fable",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Solve the following problem as completely as you can.\n\n<problem>\nFor $A\\subseteq\\mathbb N_0$ let $r_A(n)=|\\{(a,a')\\in A^2: a\\le a',\\ a+a'=n\\}|$. Call $A$ a basis if $A+A$ contains all sufficiently large integers; a basis $A$ is minimal if $A\\setminus\\{a\\}$ is not a basis for every $a\\in A$. Define\n$$\\gamma_{2}=\\inf\\{C>0:\\ \\text{every basis }A\\text{ with }r_A(n)\\ge C\\log n\\text{ for all large }n\\text{ is a disjoint union }B\\cup C'\\text{ of two bases}\\},$$\n$$\\gamma_{3}=\\inf\\{C>0:\\ \\text{every basis }A\\text{ with }r_A(n)\\ge C\\log n\\text{ for all large }n\\text{ contains a minimal basis}\\}.$$\nErdős–Nathanson give $\\gamma_2,\\gamma_3\\le 1/\\log(4/3)\\approx 3.48$.\n(1) Is $\\gamma_2=1/\\log(4/3)$? Equivalently, for every $C<1/\\log(4/3)$, does there exist a basis $A$ with $r_A(n)\\ge C\\log n$ for all large $n$ that is not a disjoint union of two bases?\n(2) Is $\\gamma_2=\\gamma_3$? More generally, determine $\\gamma_2$ and $\\gamma_3$ exactly.\n</problem>\n\n<finite_instance>\n\n</finite_instance>\n\n<required_candidate_format>\n\n</required_candidate_format>\n\nReturn\n- text: your full solution or best partial progress: definitions, the argument, and a clear final answer. If you cannot solve it, state exactly what you proved and what remains.\n- claimed_status: \"solved\" only if you believe the problem (or, when given, the finite instance) is fully solved; \"partial\" for real progress; \"unsolved\" otherwise.\n- candidate: if a finite instance is given, the object you propose, exactly in the required JSON shape; otherwise null.\n",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "text": {
+    "type": "string"
+   },
+   "claimed_status": {
+    "type": "string",
+    "enum": [
+     "solved",
+     "partial",
+     "unsolved"
+    ]
+   },
+   "candidate": {
+    "type": [
+     "array",
+     "object",
+     "string",
+     "number",
+     "null"
+    ]
+   }
+  },
+  "required": [
+   "text",
+   "claimed_status",
+   "candidate"
+  ],
+  "additionalProperties": false
+ },
+ "started_at": "2026-10-18T10:45:09+00:00",
+ "finished_at": "2026-10-18T11:15:06+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 1792255,
+  "stop_reason": "tool_use",
+  "session_id": "141de33f-2b70-41bf-bb35-627918b5e4ab",
+  "total_cost_usd": 7.923285250000001,
+  "usage": {
+   "input_tokens": 8,
+   "cache_creation_input_tokens": 67277,
+   "cache_read_input_tokens": 3461,
+   "output_tokens": 131536,
+   "output_tokens_details": {
+    "thinking_tokens": 123629
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 67277,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 4,
+     "output_tokens": 3536,
+     "cache_read_input_tokens": 2273,
+     "cache_creation_input_tokens": 63981,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 63981
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-fable-5-1": {
+    "inputTokens": 8,
+    "outputTokens": 131536,
+    "cacheReadInputTokens": 3461,
+    "cacheCreationInputTokens": 67277,
+    "webSearchRequests": 0,
+    "costUSD": 7.923285250000001,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 64000,
+    "thinkingTokens": 123629,
+    "canonicalModel": "claude-fable-5-1",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 4,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"text\":\"**Status: partial.** The exact values of $\\\\gamma_2,\\\\gamma_3$ are not determined here; to my knowledge the sharpness question is the open one raised by Erdős–Nathanson. What follows is what can be proved, where the obstacles are, and the best-supported conjecture.\\n\\n## 1. Set-up and basic remarks\\n\\nFor $A\\\\subseteq\\\\mathbb N_0$ let $P_A(n)=\\\\{\\\\{a,a'\\\\}:a,a'\\\\in A,\\\\ a\\\\le a',\\\\ a+a'=n\\\\}$, so $r_A(n)=|P_A(n)|$. Distinct members of $P_A(n)$ are disjoint sets (a pair is determined by either of its elements). This is the only structural fact used in the probabilistic upper bounds.\\n\\n*Equivalence in (1).* Both defining properties are monotone in $C$, so $\\\\gamma_2=1/\\\\log(4/3)$ iff for every $C<1/\\\\log(4/3)$ some basis $A$ with $r_A(n)\\\\ge C\\\\log n$ (all large $n$) is not a disjoint union of two bases. So (1) is correctly phrased as an equivalence.\\n\\n*Minimal bases have unique representations.* If $M$ is a minimal basis and $m\\\\in M$, then $M\\\\setminus\\\\{m\\\\}$ misses infinitely many $n$; each such large $n$ has all its representations through $m$, and by disjointness of the pairs in $P_M(n)$ this forces $r_M(n)=1$. Hence every element of a minimal basis lies in the unique representation of infinitely many $n$; in particular a basis with $r_A(n)\\\\to\\\\infty$ is never itself minimal, so $\\\\gamma_3$ concerns sub-bases.\\n\\n## 2. The Erdős–Nathanson upper bound (full proof for $\\\\gamma_2$)\\n\\n**Theorem.** Let $A$ be a basis with $r_A(n)\\\\ge C\\\\log n$ for $n\\\\ge n_0$, where $C\\\\log(4/3)>1$. Then $A=R\\\\sqcup B$ with $R,B$ bases.\\n\\n*Proof.* Colour each $a\\\\in A$ independently red/blue with probability $1/2$. For $n\\\\ge n_0$ let $E_n^R$ = \\\"no pair of $P_A(n)$ is entirely red\\\". A pair $\\\\{a,a'\\\\}$ with $a<a'$ is entirely red with probability $1/4$, a pair $\\\\{a,a\\\\}$ with probability $1/2\\\\ge 1/4$; the pairs of $P_A(n)$ are disjoint, so these events are independent and\\n$$\\\\Pr[E_n^R]\\\\le (3/4)^{r_A(n)}\\\\le n^{-C\\\\log(4/3)},$$\\nand likewise for $E_n^B$. Since $C\\\\log(4/3)>1$, $\\\\sum_n(\\\\Pr E_n^R+\\\\Pr E_n^B)<\\\\infty$; by Borel–Cantelli a.s. only finitely many $E_n^R\\\\cup E_n^B$ occur, i.e. $n\\\\in(R+R)\\\\cap(B+B)$ for all large $n$. $\\\\square$\\n\\nSo $\\\\gamma_2\\\\le 1/\\\\log(4/3)$; Erdős–Nathanson's companion theorem (same $(3/4)^r$ estimate feeding an SDR/Hall construction of a minimal sub-basis) gives $\\\\gamma_3\\\\le 1/\\\\log(4/3)$.\\n\\n**Tightness of the method.** For pairs with $a<a'$ the bound $(3/4)^{r_A(n)}$ is exact for the uniform colouring, so the union-bound argument works iff $\\\\sum_n(3/4)^{r_A(n)}<\\\\infty$, i.e. (for $r_A(n)\\\\approx C\\\\log n$) iff $C>1/\\\\log(4/3)$. Any improvement of the constant requires non-uniform/dependent colourings or a genuinely non-union-bound estimate.\\n\\n## 3. The obstacle in (1): a counting analysis\\n\\nFix a scale $N$; constraints are $n\\\\in[N,2N)$, variables are $V_N=A\\\\cap[0,2N)$, $M=|V_N|$. A colouring *fails* at $n$ if $P_A(n)$ has no all-red or no all-blue pair.\\n\\n* **Many variables are forced.** A pair has one sum, so $\\\\binom M2+M\\\\ge\\\\sum_{n\\\\in[N,2N)}r_A(n)\\\\ge CN\\\\log N$, hence $M\\\\ge(1-o(1))\\\\sqrt{2CN\\\\log N}$: at least $2^{\\\\sqrt{2CN\\\\log N}}$ colourings must all be killed.\\n* **Each constraint kills little.** The fraction of colourings failing at $n$ is $2(3/4)^{r_A(n)}-(1/2)^{r_A(n)}\\\\le 2N^{-C\\\\log(4/3)}$. The events \\\"no red pair for $n$\\\" are decreasing in the red set, hence (Harris) positively correlated among themselves; only red-failure vs blue-failure can be negatively correlated. Killing all colourings therefore needs at least $\\\\sum_{n}2(3/4)^{r_A(n)}\\\\gtrsim 1$ (union bound = EN), and for a *random-like* pair system (nearly independent constraints) it needs\\n$$\\\\sum_{n\\\\in[N,2N)}2(3/4)^{r_A(n)}\\\\gtrsim M\\\\ln 2\\\\asymp\\\\sqrt{N\\\\log N}\\\\iff N^{1-C\\\\log(4/3)}\\\\gtrsim\\\\sqrt N\\\\iff C<\\\\tfrac{1}{2\\\\log(4/3)}\\\\approx 1.74 .$$\\n\\nThus this is a property‑B type problem in which, unlike Erdős' hypergraph setting, the number of vertices cannot be made polylogarithmic in $(4/3)^{r}$: it is $\\\\gtrsim\\\\sqrt{N\\\\log N}$, comparable to the kill mass $N^{1-C\\\\log(4/3)}$. Consequences:\\n\\n* If random-like bases are extremal (as in property B), then $\\\\gamma_2=\\\\frac1{2\\\\log(4/3)}<\\\\frac1{\\\\log(4/3)}$, and the answer to (1) is **no**.\\n* A rigorous lower bound $\\\\gamma_2\\\\ge c$ (even $c>0$) needs (a) a basis with two-sided control $C\\\\log n\\\\le r_A(n)\\\\le(C+o(1))\\\\log n$ for all large $n$ (purely random $A$ with mean $K\\\\log n$ only guarantees $r_A(n)\\\\ge C\\\\log n$ where $K-C+C\\\\log(C/K)>1$, far below $K$), and (b) a first-moment bound $\\\\Pr_\\\\chi[\\\\text{no failure in }[N,2N)]\\\\le 2^{-M}$ for a random colouring $\\\\chi$. Janson/Suen gives only $\\\\exp(-\\\\mu^2/2\\\\Delta)$ with $\\\\mu^2/\\\\Delta\\\\asymp\\\\sqrt N(\\\\log N)^{-3/2}$, missing $\\\\sqrt{N\\\\log N}$ by $(\\\\log N)^2$, because each element of $A\\\\cap[0,N]$ is a left endpoint for $\\\\asymp\\\\sqrt{N\\\\log N}$ different $n$. So even $\\\\gamma_2>0$ is not established by these means.\\n* An upper bound below $1/\\\\log(4/3)$ requires colourings better than uniform; none is known to me.\\n\\n## 4. On (2): $\\\\gamma_2$ versus $\\\\gamma_3$\\n\\nNo formal implication links \\\"disjoint union of two bases\\\" with \\\"contains a minimal basis\\\", so nothing rigorous follows about $\\\\gamma_2$ vs $\\\\gamma_3$. Heuristically they differ: splitting has the counting obstruction of §3, while for minimal sub-bases there is none. For a random-like basis $A$ with $r_A(n)\\\\asymp K\\\\log n$ ($K>1$) one carves a minimal basis by sparse deletion: enumerate elements with each recurring infinitely often; at stage $k$ for element $b$ pick a huge $n_k$ with $n_k-b\\\\in A$ and delete the larger element of every other pair of $P(n_k)$ (deletions lie in $(n_k/2,n_k]$, never touching earlier witnesses). A deletion set $Y\\\\subseteq(n_k/2,n_k]$ costs $n'$ exactly $|\\\\{y\\\\in Y:n'-y\\\\in A\\\\}|$ representations, which for random-like $A$ is $O(1)$ uniformly while $r_A(n')\\\\to\\\\infty$; the limit is a basis in which every element has infinitely many unique representations, i.e. a minimal basis. Only adversarial additive structure ($A\\\\supseteq(n_k-Y)+t$ for many $t$) could break this. This suggests $\\\\gamma_3<\\\\gamma_2$, consistent with the conjecture $\\\\gamma_3=0$ (every basis with $r_A(n)\\\\ge C\\\\log n$, perhaps even $r_A(n)\\\\to\\\\infty$, contains a minimal basis); but I cannot prove $\\\\gamma_3<1/\\\\log(4/3)$ or exclude $\\\\gamma_3=\\\\gamma_2$.\\n\\n## 5. Summary\\n\\n* **Proved:** $0\\\\le\\\\gamma_2,\\\\gamma_3\\\\le 1/\\\\log(4/3)$ (upper bound proved above for $\\\\gamma_2$; for $\\\\gamma_3$ it is Erdős–Nathanson). The uniform random colouring method is exactly tight at $1/\\\\log(4/3)$.\\n* **Unresolved:** (1) whether $\\\\gamma_2=1/\\\\log(4/3)$; (2) whether $\\\\gamma_2=\\\\gamma_3$ and the exact values.\\n* **Best-supported conjecture (unproved):** both answers are *no*: $\\\\gamma_2$ should be the random-like threshold $1/(2\\\\log(4/3))\\\\approx1.74$ (at least strictly below $1/\\\\log(4/3)$), and $\\\\gamma_3$ strictly smaller, plausibly $0$. The barrier to a lower bound is two-sided control of $r_A(n)$ plus a sharp first-moment estimate over $\\\\ge2^{\\\\sqrt{2CN\\\\log N}}$ colourings per scale; the barrier to a better upper bound is finding colourings better than uniform.\",\"claimed_status\":\"partial\",\"candidate\":null}",
+  "structured_output": {
+   "text": "**Status: partial.** The exact values of $\\gamma_2,\\gamma_3$ are not determined here; to my knowledge the sharpness question is the open one raised by Erdős–Nathanson. What follows is what can be proved, where the obstacles are, and the best-supported conjecture.\n\n## 1. Set-up and basic remarks\n\nFor $A\\subseteq\\mathbb N_0$ let $P_A(n)=\\{\\{a,a'\\}:a,a'\\in A,\\ a\\le a',\\ a+a'=n\\}$, so $r_A(n)=|P_A(n)|$. Distinct members of $P_A(n)$ are disjoint sets (a pair is determined by either of its elements). This is the only structural fact used in the probabilistic upper bounds.\n\n*Equivalence in (1).* Both defining properties are monotone in $C$, so $\\gamma_2=1/\\log(4/3)$ iff for every $C<1/\\log(4/3)$ some basis $A$ with $r_A(n)\\ge C\\log n$ (all large $n$) is not a disjoint union of two bases. So (1) is correctly phrased as an equivalence.\n\n*Minimal bases have unique representations.* If $M$ is a minimal basis and $m\\in M$, then $M\\setminus\\{m\\}$ misses infinitely many $n$; each such large $n$ has all its representations through $m$, and by disjointness of the pairs in $P_M(n)$ this forces $r_M(n)=1$. Hence every element of a minimal basis lies in the unique representation of infinitely many $n$; in particular a basis with $r_A(n)\\to\\infty$ is never itself minimal, so $\\gamma_3$ concerns sub-bases.\n\n## 2. The Erdős–Nathanson upper bound (full proof for $\\gamma_2$)\n\n**Theorem.** Let $A$ be a basis with $r_A(n)\\ge C\\log n$ for $n\\ge n_0$, where $C\\log(4/3)>1$. Then $A=R\\sqcup B$ with $R,B$ bases.\n\n*Proof.* Colour each $a\\in A$ independently red/blue with probability $1/2$. For $n\\ge n_0$ let $E_n^R$ = \"no pair of $P_A(n)$ is entirely red\". A pair $\\{a,a'\\}$ with $a<a'$ is entirely red with probability $1/4$, a pair $\\{a,a\\}$ with probability $1/2\\ge 1/4$; the pairs of $P_A(n)$ are disjoint, so these events are independent and\n$$\\Pr[E_n^R]\\le (3/4)^{r_A(n)}\\le n^{-C\\log(4/3)},$$\nand likewise for $E_n^B$. Since $C\\log(4/3)>1$, $\\sum_n(\\Pr E_n^R+\\Pr E_n^B)<\\infty$; by Borel–Cantelli a.s. only finitely many $E_n^R\\cup E_n^B$ occur, i.e. $n\\in(R+R)\\cap(B+B)$ for all large $n$. $\\square$\n\nSo $\\gamma_2\\le 1/\\log(4/3)$; Erdős–Nathanson's companion theorem (same $(3/4)^r$ estimate feeding an SDR/Hall construction of a minimal sub-basis) gives $\\gamma_3\\le 1/\\log(4/3)$.\n\n**Tightness of the method.** For pairs with $a<a'$ the bound $(3/4)^{r_A(n)}$ is exact for the uniform colouring, so the union-bound argument works iff $\\sum_n(3/4)^{r_A(n)}<\\infty$, i.e. (for $r_A(n)\\approx C\\log n$) iff $C>1/\\log(4/3)$. Any improvement of the constant requires non-uniform/dependent colourings or a genuinely non-union-bound estimate.\n\n## 3. The obstacle in (1): a counting analysis\n\nFix a scale $N$; constraints are $n\\in[N,2N)$, variables are $V_N=A\\cap[0,2N)$, $M=|V_N|$. A colouring *fails* at $n$ if $P_A(n)$ has no all-red or no all-blue pair.\n\n* **Many variables are forced.** A pair has one sum, so $\\binom M2+M\\ge\\sum_{n\\in[N,2N)}r_A(n)\\ge CN\\log N$, hence $M\\ge(1-o(1))\\sqrt{2CN\\log N}$: at least $2^{\\sqrt{2CN\\log N}}$ colourings must all be killed.\n* **Each constraint kills little.** The fraction of colourings failing at $n$ is $2(3/4)^{r_A(n)}-(1/2)^{r_A(n)}\\le 2N^{-C\\log(4/3)}$. The events \"no red pair for $n$\" are decreasing in the red set, hence (Harris) positively correlated among themselves; only red-failure vs blue-failure can be negatively correlated. Killing all colourings therefore needs at least $\\sum_{n}2(3/4)^{r_A(n)}\\gtrsim 1$ (union bound = EN), and for a *random-like* pair system (nearly independent constraints) it needs\n$$\\sum_{n\\in[N,2N)}2(3/4)^{r_A(n)}\\gtrsim M\\ln 2\\asymp\\sqrt{N\\log N}\\iff N^{1-C\\log(4/3)}\\gtrsim\\sqrt N\\iff C<\\tfrac{1}{2\\log(4/3)}\\approx 1.74 .$$\n\nThus this is a property‑B type problem in which, unlike Erdős' hypergraph setting, the number of vertices cannot be made polylogarithmic in $(4/3)^{r}$: it is $\\gtrsim\\sqrt{N\\log N}$, comparable to the kill mass $N^{1-C\\log(4/3)}$. Consequences:\n\n* If random-like bases are extremal (as in property B), then $\\gamma_2=\\frac1{2\\log(4/3)}<\\frac1{\\log(4/3)}$, and the answer to (1) is **no**.\n* A rigorous lower bound $\\gamma_2\\ge c$ (even $c>0$) needs (a) a basis with two-sided control $C\\log n\\le r_A(n)\\le(C+o(1))\\log n$ for all large $n$ (purely random $A$ with mean $K\\log n$ only guarantees $r_A(n)\\ge C\\log n$ where $K-C+C\\log(C/K)>1$, far below $K$), and (b) a first-moment bound $\\Pr_\\chi[\\text{no failure in }[N,2N)]\\le 2^{-M}$ for a random colouring $\\chi$. Janson/Suen gives only $\\exp(-\\mu^2/2\\Delta)$ with $\\mu^2/\\Delta\\asymp\\sqrt N(\\log N)^{-3/2}$, missing $\\sqrt{N\\log N}$ by $(\\log N)^2$, because each element of $A\\cap[0,N]$ is a left endpoint for $\\asymp\\sqrt{N\\log N}$ different $n$. So even $\\gamma_2>0$ is not established by these means.\n* An upper bound below $1/\\log(4/3)$ requires colourings better than uniform; none is known to me.\n\n## 4. On (2): $\\gamma_2$ versus $\\gamma_3$\n\nNo formal implication links \"disjoint union of two bases\" with \"contains a minimal basis\", so nothing rigorous follows about $\\gamma_2$ vs $\\gamma_3$. Heuristically they differ: splitting has the counting obstruction of §3, while for minimal sub-bases there is none. For a random-like basis $A$ with $r_A(n)\\asymp K\\log n$ ($K>1$) one carves a minimal basis by sparse deletion: enumerate elements with each recurring infinitely often; at stage $k$ for element $b$ pick a huge $n_k$ with $n_k-b\\in A$ and delete the larger element of every other pair of $P(n_k)$ (deletions lie in $(n_k/2,n_k]$, never touching earlier witnesses). A deletion set $Y\\subseteq(n_k/2,n_k]$ costs $n'$ exactly $|\\{y\\in Y:n'-y\\in A\\}|$ representations, which for random-like $A$ is $O(1)$ uniformly while $r_A(n')\\to\\infty$; the limit is a basis in which every element has infinitely many unique representations, i.e. a minimal basis. Only adversarial additive structure ($A\\supseteq(n_k-Y)+t$ for many $t$) could break this. This suggests $\\gamma_3<\\gamma_2$, consistent with the conjecture $\\gamma_3=0$ (every basis with $r_A(n)\\ge C\\log n$, perhaps even $r_A(n)\\to\\infty$, contains a minimal basis); but I cannot prove $\\gamma_3<1/\\log(4/3)$ or exclude $\\gamma_3=\\gamma_2$.\n\n## 5. Summary\n\n* **Proved:** $0\\le\\gamma_2,\\gamma_3\\le 1/\\log(4/3)$ (upper bound proved above for $\\gamma_2$; for $\\gamma_3$ it is Erdős–Nathanson). The uniform random colouring method is exactly tight at $1/\\log(4/3)$.\n* **Unresolved:** (1) whether $\\gamma_2=1/\\log(4/3)$; (2) whether $\\gamma_2=\\gamma_3$ and the exact values.\n* **Best-supported conjecture (unproved):** both answers are *no*: $\\gamma_2$ should be the random-like threshold $1/(2\\log(4/3))\\approx1.74$ (at least strictly below $1/\\log(4/3)$), and $\\gamma_3$ strictly smaller, plausibly $0$. The barrier to a lower bound is two-sided control of $r_A(n)$ plus a sharp first-moment estimate over $\\ge2^{\\sqrt{2CN\\log N}}$ colourings per scale; the barrier to a better upper bound is finding colourings better than uniform.",
+   "claimed_status": "partial",
+   "candidate": null
+  },
+  "ttft_ms": 867043,
+  "type": "result",
+  "duration_ms": 1795431,
+  "uuid": "d28d7668-3738-4d1a-a65d-6494c0497e64",
+  "ttft_stream_ms": 2701,
+  "time_to_request_ms": 103,
+  "first_content_frame_ms": 2702,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}

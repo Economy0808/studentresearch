@@ -2,3 +2,8 @@
 {"stage": "solve", "target_id": "P-9b2893", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T06:50:32+00:00"}
 {"stage": "solve", "target_id": "P-a7cbb0", "model": "fable", "error": "API Error: Fable 5.1's safeguards flagged this message (https://www.anthropic.com/legal/aup). This sometimes happens with safe, normal conversations. Claude Code can't respond to this message with Fable 5.1.\n\nTry rephrasing the request in a new session or change your model.\n\nLearn more: https://support.claude.com/en/articles/15363606\n\nDetails: `[reasoning_extraction]`\n\nRequest ID: req_011Cg9H616aKAGmyezq96P68\n\nMessage ID: msg_011Cg9H61hZ5Vo27NoWPsKiN", "created_at": "2026-10-18T07:08:42+00:00"}
 {"stage": "solve", "target_id": "P-b1424c", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T07:40:24+00:00"}
+{"stage": "solve", "target_id": "P-8dc27b", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T08:22:40+00:00"}
+{"stage": "solve", "target_id": "P-9b2893", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T08:52:40+00:00"}
+{"stage": "solve", "target_id": "P-a7cbb0", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T09:22:40+00:00"}
+{"stage": "solve", "target_id": "P-158772", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T10:13:01+00:00"}
+{"stage": "solve", "target_id": "P-be760c", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T10:44:15+00:00"}

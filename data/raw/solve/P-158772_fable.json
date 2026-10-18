@@ -1,0 +1,45 @@
+{
+ "model": "fable",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Solve the following problem as completely as you can.\n\n<problem>\nFor an asymptotic basis $A\\subseteq\\mathbb N_0$ of order 2, let $r_A(n)=|\\{(a,a')\\in A^2: a\\le a',\\ a+a'=n\\}|$. A basis is minimal if no proper subset is an asymptotic basis of order 2. Define $c_3$ (resp. $c_2$) as the infimum of $c\\ge0$ such that every asymptotic basis $A$ of order 2 with $r_A(n)\\ge c\\log n$ for all large $n$ contains a minimal asymptotic basis (resp. is a union of two disjoint asymptotic bases of order 2). Erdős–Nathanson gives $c_2,c_3\\le 1/\\log(4/3)$. Determine $c_3$ and $c_2$. In particular, is $c_3>0$, i.e. is there $c>0$ and an asymptotic basis with $r_A(n)\\ge c\\log n$ for all large $n$ containing no minimal asymptotic basis? Is $c_2=c_3$?\n</problem>\n\n<finite_instance>\n\n</finite_instance>\n\n<required_candidate_format>\n\n</required_candidate_format>\n\nReturn\n- text: your full solution or best partial progress: definitions, the argument, and a clear final answer. If you cannot solve it, state exactly what you proved and what remains.\n- claimed_status: \"solved\" only if you believe the problem (or, when given, the finite instance) is fully solved; \"partial\" for real progress; \"unsolved\" otherwise.\n- candidate: if a finite instance is given, the object you propose, exactly in the required JSON shape; otherwise null.\n",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "text": {
+    "type": "string"
+   },
+   "claimed_status": {
+    "type": "string",
+    "enum": [
+     "solved",
+     "partial",
+     "unsolved"
+    ]
+   },
+   "candidate": {
+    "type": [
+     "array",
+     "object",
+     "string",
+     "number",
+     "null"
+    ]
+   }
+  },
+  "required": [
+   "text",
+   "claimed_status",
+   "candidate"
+  ],
+  "additionalProperties": false
+ },
+ "started_at": "2026-10-18T09:43:01+00:00",
+ "finished_at": "2026-10-18T10:13:01+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "is_error": true,
+  "result": "timeout after 1800s",
+  "stdout": "",
+  "stderr": "strict mode: use allowUnionTypes to allow union type keyword at \"#/properties/candidate\" (strictTypes)\n"
+ }
+}
