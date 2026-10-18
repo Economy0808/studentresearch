@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path
 
 from store import now
@@ -59,7 +60,7 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
     if dry_run:
         out = fake(model, schema, prompt)
     else:
-        out = _cli(model, system, prompt, schema, raw_path.parent.parent / "_cwd")
+        out = _cli(model, system, prompt, schema, Path(tempfile.gettempdir()) / "claude_cli_cwd")
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path.write_text(json.dumps({"model": model, "system": system, "prompt": prompt, "schema": schema,
                                     "started_at": started, "finished_at": now(),
@@ -106,10 +107,13 @@ def _text(b) -> str:
 
 
 def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
+    # Hidden context: auto-memory attaches from a project cwd (so cwd is a neutral temp folder), and MCP
+    # instructions come from account connectors (so --strict-mcp-config with an empty server list).
     cwd.mkdir(parents=True, exist_ok=True)
     cmd = [claude_exe(), "-p", "--model", model, "--output-format", "json",
            "--json-schema", json.dumps(schema), "--tools", "", "--system-prompt", system,
-           "--setting-sources", "project", "--no-session-persistence"]
+           "--setting-sources", "project", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
+           "--no-session-persistence"]
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}  # bill the Max plan, never the API
     try:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",

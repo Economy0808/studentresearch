@@ -6,7 +6,7 @@
 - Python 3.14, `python -m pip install -r requirements.txt` (분석용 pandas·scipy·matplotlib)
 - Claude Code CLI 로그인(Max 플랜): 터미널에서 `claude` 실행 후 `/login`
 - `ANTHROPIC_API_KEY` 환경변수가 설정돼 있으면 안 된다(API 과금; 스크립트가 서브프로세스에서 제거하지만 셸에서도 비워 둘 것). 모든 명령은 프로젝트 폴더에서 실행한다.
-- `python run.py probe` → 세 모델이 각각 `ok: true`를 내고 `saw_other_instructions: false`여야 한다.
+- `python run.py probe` → 세 모델이 각각 `ok: true`를 내야 한다. `saw_other_instructions`는 아래 환경 정보 때문에만 `true`일 수 있다. probe 출력의 other_instructions_summary에는 Claude Code 고유의 환경 정보(OS, 작업 폴더, 날짜, 모델 이름)와 계정 이메일 식별 문구만 보여야 한다. 메모리·프로젝트 설명·MCP 안내가 보이면 호출 폴더나 플래그가 잘못된 것이다.
 
 ## 1. 자료 준비
 - `context/<이름>.md` — 컨텍스트 팩. 규격은 `context/README.md`.

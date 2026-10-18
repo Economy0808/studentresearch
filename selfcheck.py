@@ -120,11 +120,13 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         for flag, val in (("--output-format", "json"), ("--tools", ""), ("--system-prompt", "SYS"),
                           ("--setting-sources", "project")):
             assert cmd[cmd.index(flag) + 1] == val, (flag, cmd)
-        assert "--no-session-persistence" in cmd
+        assert "--no-session-persistence" in cmd and "--strict-mcp-config" in cmd
+        assert cmd[cmd.index("--mcp-config") + 1] == '{"mcpServers":{}}', cmd
         assert json.loads(cmd[cmd.index("--json-schema") + 1])["type"] == "object"
         assert seen["kw"]["input"] == "PROMPT" and seen["kw"]["encoding"] == "utf-8"
         assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == 1800, seen["kw"]
-        assert Path(seen["kw"]["cwd"]) == tmp / "raw" / "_cwd" and (tmp / "raw" / "_cwd").is_dir()
+        neutral = Path(tempfile.gettempdir()) / "claude_cli_cwd"  # outside the repo: no project memory attaches
+        assert Path(seen["kw"]["cwd"]) == neutral and neutral.is_dir()
         seen["stdout_next"] = "not json"
         try:
             llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "bad.json")
