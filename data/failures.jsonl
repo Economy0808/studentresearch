@@ -7,3 +7,6 @@
 {"stage": "solve", "target_id": "P-a7cbb0", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T09:22:40+00:00"}
 {"stage": "solve", "target_id": "P-158772", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T10:13:01+00:00"}
 {"stage": "solve", "target_id": "P-be760c", "model": "fable", "error": "timeout after 1800s", "created_at": "2026-10-18T10:44:15+00:00"}
+{"stage": "solve", "target_id": "P-5d88c3", "model": "opus", "error": "timeout after 1800s", "created_at": "2026-10-18T13:27:48+00:00"}
+{"stage": "solve", "target_id": "P-e1102e", "model": "opus", "error": "timeout after 1800s", "created_at": "2026-10-18T14:39:33+00:00"}
+{"stage": "solve", "target_id": "P-09b1eb", "model": "opus", "error": "timeout after 1800s", "created_at": "2026-10-18T15:13:31+00:00"}
