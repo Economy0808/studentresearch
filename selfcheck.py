@@ -124,7 +124,7 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         assert cmd[cmd.index("--mcp-config") + 1] == '{"mcpServers":{}}', cmd
         assert json.loads(cmd[cmd.index("--json-schema") + 1])["type"] == "object"
         assert seen["kw"]["input"] == "PROMPT" and seen["kw"]["encoding"] == "utf-8"
-        assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == llm.CALL_TIMEOUT, seen["kw"]
+        assert seen["kw"]["errors"] == "replace" and seen["kw"]["timeout"] == llm.CALL_TIMEOUT == 3600, seen["kw"]
         neutral = Path(tempfile.gettempdir()) / "claude_cli_cwd"  # outside the repo: no project memory attaches
         assert Path(seen["kw"]["cwd"]) == neutral and neutral.is_dir()
         seen["stdout_next"] = "not json"

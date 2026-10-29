@@ -11,7 +11,7 @@ from store import now
 
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
-CALL_TIMEOUT = 1800  # seconds per CLI call; pipeline.solve stops retrying a cell after TIME_BUDGET_ATTEMPTS of these
+CALL_TIMEOUT = 3600  # seconds per CLI call, same for every model (user decision 2026-10-29; was 1800)
 # Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
 STOP_MARKERS = ("usage limit", "rate limit", "you've hit your", "you've reached your", "usage credits", "extra usage",
                 "spend limit", "credit balance", "authenticate", "authentication error", "oauth", "/login",
