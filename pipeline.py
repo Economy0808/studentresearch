@@ -12,7 +12,8 @@ from store import append_jsonl, new_id, now, read_jsonl, write_jsonl
 
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
-TIME_BUDGET_ATTEMPTS = 2  # timed-out solve attempts per (problem, solver) before the cell is recorded as unsolved
+TIME_BUDGET_ATTEMPTS = 2  # exhausted solve attempts (timeout or output-token overflow) per (problem, solver) before the cell is recorded as unsolved
+BUDGET_ERRORS = ("timeout", "output token maximum")  # failure messages that count as an exhausted attempt
 
 _STR = {"type": "string"}
 _SCORE = {"type": ["integer", "null"], "minimum": 1, "maximum": 5}
@@ -126,16 +127,16 @@ def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
     sol_path = data_dir / "solutions.jsonl"
     done = {(s["problem_id"], s["solver"]) for s in read_jsonl(sol_path)}
     timeouts = Counter((f["target_id"], f["model"]) for f in read_jsonl(data_dir / "failures.jsonl")
-                       if f.get("stage") == "solve" and "timeout" in str(f.get("error", "")))
+                       if f.get("stage") == "solve" and any(k in str(f.get("error", "")) for k in BUDGET_ERRORS))
     made = 0
     for p in all_problems(data_dir):
         for model in models:
             if (p["id"], model) in done:
                 continue
             if timeouts[(p["id"], model)] >= TIME_BUDGET_ATTEMPTS:
-                # time budget: after 2 timed-out attempts the cell is recorded as unsolved and never retried
+                # budget rule: after 2 exhausted attempts (timeout / output-token overflow) the cell is recorded as unsolved and never retried
                 append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
-                                        "text": f"[pipeline] No answer within the time budget ({TIME_BUDGET_ATTEMPTS} attempts x {llm.CALL_TIMEOUT} s each). This row was written by the pipeline, not by the model.",
+                                        "text": f"[pipeline] No answer within the budget ({TIME_BUDGET_ATTEMPTS} attempts, each ending in a {llm.CALL_TIMEOUT} s timeout or an output-token overflow). This row was written by the pipeline, not by the model.",
                                         "claimed_status": "unsolved", "candidate": None, "budget_exceeded": True,
                                         "created_at": now()})
                 made += 1
