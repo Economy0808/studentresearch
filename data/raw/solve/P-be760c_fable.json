@@ -33,13 +33,14 @@
   ],
   "additionalProperties": false
  },
- "started_at": "2026-10-29T03:59:13+00:00",
- "finished_at": "2026-10-29T04:29:14+00:00",
+ "started_at": "2026-10-29T13:16:13+00:00",
+ "finished_at": "2026-10-29T13:16:13+00:00",
  "cli_version": "2.1.302 (Claude Code)",
  "cli_output": {
   "is_error": true,
-  "result": "timeout after 1800s",
+  "result": "empty stdout (exit 3221225794); stderr tail: ",
   "stdout": "",
-  "stderr": "strict mode: use allowUnionTypes to allow union type keyword at \"#/properties/candidate\" (strictTypes)\n"
+  "stderr": "",
+  "returncode": 3221225794
  }
 }
