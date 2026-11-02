@@ -33,13 +33,75 @@
   ],
   "additionalProperties": false
  },
- "started_at": "2026-10-29T04:29:14+00:00",
- "finished_at": "2026-10-29T04:59:14+00:00",
+ "started_at": "2026-11-02T13:19:28+00:00",
+ "finished_at": "2026-11-02T13:22:34+00:00",
  "cli_version": "2.1.302 (Claude Code)",
  "cli_output": {
+  "duration_api_ms": 0,
+  "stop_reason": "stop_sequence",
+  "session_id": "8ace37a6-144c-4f03-8eca-94d920f1670f",
+  "total_cost_usd": 0,
+  "usage": {
+   "output_tokens_details": {
+    "thinking_tokens": 0
+   },
+   "input_tokens": 0,
+   "cache_creation_input_tokens": 0,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 0,
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 0,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "",
+   "iterations": [],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {},
+  "permission_denials": [],
+  "terminal_reason": "api_error",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
   "is_error": true,
-  "result": "timeout after 1800s",
-  "stdout": "",
-  "stderr": "strict mode: use allowUnionTypes to allow union type keyword at \"#/properties/candidate\" (strictTypes)\n"
+  "num_turns": 1,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "API Error: Can't reach the API server — check your internet or DNS (ENOTFOUND)",
+  "type": "result",
+  "duration_ms": 185021,
+  "uuid": "594a761d-674d-4a80-9897-6e07845f63e6",
+  "queued_turn_count": 0,
+  "result_index": 0
  }
 }
