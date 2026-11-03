@@ -12,6 +12,7 @@ from store import now
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
 CALL_TIMEOUT = 3600  # seconds per CLI call, same for every model (user decision 2026-10-29; was 1800)
+TIMEOUT_PREFIX = "timeout after "  # failure messages that start with this are per-call timeouts (pipeline.is_budget_error)
 # Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
 STOP_MARKERS = ("usage limit", "rate limit", "you've hit your", "you've reached your", "usage credits", "extra usage",
                 "spend limit", "credit balance", "authenticate", "authentication error", "oauth", "/login",
@@ -20,6 +21,7 @@ STOP_MARKERS = ("usage limit", "rate limit", "you've hit your", "you've reached 
 
 class StopRun(Exception):
     """Auth or usage-limit failure: abort the whole run instead of burning the queue."""
+    last_error = None  # set only by the breaker: the failure that tripped it, so the caller can still record it
 
 
 class CallFailed(Exception):
@@ -57,12 +59,17 @@ def claude_exe() -> str:
 
 def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry_run: bool = False) -> dict:
     global _consecutive_failures
+    raw_path.parent.mkdir(parents=True, exist_ok=True)
+    if raw_path.exists():  # keep the evidence of earlier attempts: <id>_<model>.attempt1.json, .attempt2.json, ...
+        n = 1  # done before the call so a rename error cannot discard an answer that took an hour
+        while raw_path.with_name(f"{raw_path.stem}.attempt{n}{raw_path.suffix}").exists():
+            n += 1
+        raw_path.rename(raw_path.with_name(f"{raw_path.stem}.attempt{n}{raw_path.suffix}"))
     started = now()
     if dry_run:
         out = fake(model, schema, prompt)
     else:
         out = _cli(model, system, prompt, schema, Path(tempfile.gettempdir()) / "claude_cli_cwd")
-    raw_path.parent.mkdir(parents=True, exist_ok=True)
     raw_path.write_text(json.dumps({"model": model, "system": system, "prompt": prompt, "schema": schema,
                                     "started_at": started, "finished_at": now(),
                                     "cli_version": None if dry_run else cli_version(), "cli_output": out},
@@ -98,9 +105,12 @@ def _raise_if_error(out: dict) -> None:
     if any(m in low for m in STOP_MARKERS):
         raise StopRun(msg)
     _consecutive_failures += 1
+    msg = msg or "CLI reported an error without a message"
     if _consecutive_failures >= 5:
-        raise StopRun(f"5 consecutive failures; last: {msg}")
-    raise CallFailed(msg or "CLI reported an error without a message")
+        e = StopRun(f"5 consecutive failures; last: {msg}")
+        e.last_error = msg
+        raise e
+    raise CallFailed(msg)
 
 
 def _text(b) -> str:
@@ -120,7 +130,7 @@ def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
         p = subprocess.run(cmd, input=prompt, capture_output=True, text=True, encoding="utf-8",
                            errors="replace", cwd=cwd, timeout=CALL_TIMEOUT, env=env)
     except subprocess.TimeoutExpired as e:
-        return {"is_error": True, "result": f"timeout after {CALL_TIMEOUT}s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
+        return {"is_error": True, "result": f"{TIMEOUT_PREFIX}{CALL_TIMEOUT}s", "stdout": _text(e.stdout), "stderr": _text(e.stderr)}
     except OSError as e:
         return {"is_error": True, "result": f"could not start claude CLI: {e}"}
     if not p.stdout.strip():

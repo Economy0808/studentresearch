@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 import llm
-from pipeline import BUDGET_ERRORS, all_problems
+from pipeline import all_problems, is_budget_error
 from store import now, read_jsonl
 
 ROOT = Path(__file__).resolve().parent
@@ -13,11 +13,11 @@ D = ROOT / "data"
 
 def main() -> None:
     probs = all_problems(D)
-    sols = read_jsonl(D / "solutions.jsonl")
+    kind = {p["id"]: p["kind"] for p in probs}
+    sols = [s for s in read_jsonl(D / "solutions.jsonl") if s["problem_id"] in kind]  # all_problems already dropped EXCLUDED_PROBLEMS
     fails = read_jsonl(D / "failures.jsonl")
     ratings = read_jsonl(D / "ratings.jsonl")
     vers = read_jsonl(D / "verifications.jsonl")
-    kind = {p["id"]: p["kind"] for p in probs}
     fail_by: dict[tuple, list] = {}
     for f in fails:
         fail_by.setdefault((f["stage"], f["target_id"], f["model"]), []).append(f)
@@ -47,7 +47,7 @@ def main() -> None:
                 st, note, at = "pending", "", ""
             add(stage="solve", item=p["id"], kind=p["kind"], source=p["source"], model=m, status=st,
                 attempts=len(fl) + (1 if st == "done" else 0),
-                budget_tries=sum(any(k in f["error"] for k in BUDGET_ERRORS) for f in fl), note=note, at=at)
+                budget_tries=sum(is_budget_error(f["error"]) for f in fl), note=note, at=at)
 
     rated = {(r["rater"], r["target_id"]) for r in ratings if r.get("rater_type") == "ai"}
     targets = [("problem", p["id"], p["kind"], p["source"]) for p in probs] + \

@@ -13,7 +13,16 @@ from store import append_jsonl, new_id, now, read_jsonl, write_jsonl
 ROOT = Path(__file__).resolve().parent
 PROMPTS = ROOT / "prompts"
 TIME_BUDGET_ATTEMPTS = 2  # exhausted solve attempts (timeout or output-token overflow) per (problem, solver) before the cell is recorded as unsolved
-BUDGET_ERRORS = ("timeout", "output token maximum")  # failure messages that count as an exhausted attempt
+# Excluded 2026-10-29: the finite instances of these two generated checkable problems were found provably impossible.
+# Their rows stay in the data files; every stage, status.py and analyze.py skip them (all_problems drops them).
+EXCLUDED_PROBLEMS = {"P-fdf0ff", "P-2e0477"}
+
+
+def is_budget_error(error) -> bool:
+    """A failure that counts as an exhausted solve attempt: our per-call timeout, or the API's output-token overflow."""
+    e = str(error or "")
+    return e.startswith(llm.TIMEOUT_PREFIX) or "output token maximum" in e
+
 
 _STR = {"type": "string"}
 _SCORE = {"type": ["integer", "null"], "minimum": 1, "maximum": 5}
@@ -64,12 +73,31 @@ def all_problems(data_dir: Path) -> list[dict]:
     dup = sorted({i for i in ids if ids.count(i) > 1})
     if dup:
         raise SystemExit(f"duplicate problem ids across problems.jsonl and human_problems.jsonl: {dup}")
-    return rows
+    return [p for p in rows if p["id"] not in EXCLUDED_PROBLEMS]
+
+
+def check_one_row_per_cell(data_dir: Path) -> None:
+    cells = Counter((s["problem_id"], s.get("solver")) for s in read_jsonl(data_dir / "solutions.jsonl"))
+    dup = sorted((c for c, n in cells.items() if n > 1), key=str)
+    if dup:
+        raise SystemExit(f"solutions.jsonl has more than one row for the same (problem_id, solver): {dup}; fix the file first")
 
 
 def record_failure(data_dir: Path, stage: str, target_id: str, model: str, err: Exception) -> None:
     append_jsonl(data_dir / "failures.jsonl", {"stage": stage, "target_id": target_id, "model": model,
                                                "error": str(err)[:1000], "created_at": now()})
+
+
+def call_recorded(data_dir: Path, stage: str, target_id: str, model: str, *args):
+    """llm.call that writes every failure to failures.jsonl; a single failure returns None, a StopRun still propagates."""
+    try:
+        return llm.call(model, *args)
+    except llm.CallFailed as e:
+        record_failure(data_dir, stage, target_id, model, e)
+    except llm.StopRun as e:
+        if e.last_error:  # the breaker's 5th failure: record the underlying error, not the wrapper text
+            record_failure(data_dir, stage, target_id, model, llm.CallFailed(e.last_error))
+        raise
 
 
 def gen(data_dir: Path, context_path: Path, kind: str, n: int, models=llm.MODELS, dry_run: bool = False) -> int:
@@ -90,10 +118,8 @@ def gen(data_dir: Path, context_path: Path, kind: str, n: int, models=llm.MODELS
             focus = results[i % len(results)]
             prompt = fill(template, context=text, focus=focus)
             raw = data_dir / "raw" / "gen" / (key.replace(":", "_") + ".json")
-            try:
-                out = llm.call(model, system(), prompt, schema, raw, dry_run)
-            except llm.CallFailed as e:
-                record_failure(data_dir, "gen", key, model, e)
+            out = call_recorded(data_dir, "gen", key, model, system(), prompt, schema, raw, dry_run)
+            if out is None:
                 continue
             if kind == "checkable" and not all(isinstance(out.get(k), str) and out[k].strip() for k in CHECKABLE_PROPS):
                 record_failure(data_dir, "gen", key, model, ValueError("checkable fields must be non-empty strings"))
@@ -127,38 +153,37 @@ def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
     sol_path = data_dir / "solutions.jsonl"
     done = {(s["problem_id"], s["solver"]) for s in read_jsonl(sol_path)}
     timeouts = Counter((f["target_id"], f["model"]) for f in read_jsonl(data_dir / "failures.jsonl")
-                       if f.get("stage") == "solve" and any(k in str(f.get("error", "")) for k in BUDGET_ERRORS))
+                       if f.get("stage") == "solve" and is_budget_error(f.get("error")))
+    cells = [(p, m) for p in all_problems(data_dir) for m in models if (p["id"], m) not in done]
+    # untried cells first (stable sort keeps problem order); cells that already owe a budget row go first because they cost no call
+    cells.sort(key=lambda c: n if (n := timeouts[(c[0]["id"], c[1])]) < TIME_BUDGET_ATTEMPTS else -1)
     made = 0
-    for p in all_problems(data_dir):
-        for model in models:
-            if (p["id"], model) in done:
-                continue
-            if timeouts[(p["id"], model)] >= TIME_BUDGET_ATTEMPTS:
-                # budget rule: after 2 exhausted attempts (timeout / output-token overflow) the cell is recorded as unsolved and never retried
-                append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
-                                        "text": f"[pipeline] No answer within the budget ({TIME_BUDGET_ATTEMPTS} attempts, each ending in a {llm.CALL_TIMEOUT} s timeout or an output-token overflow). This row was written by the pipeline, not by the model.",
-                                        "claimed_status": "unsolved", "candidate": None, "budget_exceeded": True,
-                                        "created_at": now()})
-                made += 1
-                continue
-            prompt = fill(template, statement=p["statement"], finite_form=p.get("finite_form"),
-                          candidate_format=p.get("candidate_format"))
-            raw = data_dir / "raw" / "solve" / f"{p['id']}_{model}.json"
-            try:
-                out = llm.call(model, system(), prompt, schema, raw, dry_run)
-            except llm.CallFailed as e:
-                record_failure(data_dir, "solve", p["id"], model, e)
-                continue
-            if out["claimed_status"] not in SOLVE_PROPS["claimed_status"]["enum"]:
-                record_failure(data_dir, "solve", p["id"], model, ValueError("claimed_status out of range"))
-                continue
+    for p, model in cells:
+        if timeouts[(p["id"], model)] >= TIME_BUDGET_ATTEMPTS:
+            # budget rule: after 2 exhausted attempts (timeout / output-token overflow) the cell is recorded as unsolved and never retried
             append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
-                                    **{k: out[k] for k in SOLVE_PROPS}, "created_at": now()})
+                                    "text": f"[pipeline] No answer within the budget ({TIME_BUDGET_ATTEMPTS} attempts, each ending in a {llm.CALL_TIMEOUT} s timeout or an output-token overflow). This row was written by the pipeline, not by the model.",
+                                    "claimed_status": "unsolved", "candidate": None, "budget_exceeded": True,
+                                    "created_at": now()})
             made += 1
+            continue
+        prompt = fill(template, statement=p["statement"], finite_form=p.get("finite_form"),
+                      candidate_format=p.get("candidate_format"))
+        raw = data_dir / "raw" / "solve" / f"{p['id']}_{model}.json"
+        out = call_recorded(data_dir, "solve", p["id"], model, system(), prompt, schema, raw, dry_run)
+        if out is None:
+            continue
+        if out["claimed_status"] not in SOLVE_PROPS["claimed_status"]["enum"]:
+            record_failure(data_dir, "solve", p["id"], model, ValueError("claimed_status out of range"))
+            continue
+        append_jsonl(sol_path, {"id": new_id("S"), "problem_id": p["id"], "solver": model,
+                                **{k: out[k] for k in SOLVE_PROPS}, "created_at": now()})
+        made += 1
     return made
 
 
 def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
+    check_one_row_per_cell(data_dir)
     rubric = load_prompt("rubric.md")
     t_prob = fill(load_prompt("eval_problem.md"), rubric=rubric)
     t_sol = fill(load_prompt("eval_solution.md"), rubric=rubric)
@@ -171,10 +196,8 @@ def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
     def rate(model: str, target_type: str, target_id: str, prompt: str, props: dict) -> None:
         nonlocal made
         raw = data_dir / "raw" / "eval" / f"{target_id}_{model}.json"
-        try:
-            out = llm.call(model, system(), prompt, _schema(props), raw, dry_run)
-        except llm.CallFailed as e:
-            record_failure(data_dir, "eval", target_id, model, e)
+        out = call_recorded(data_dir, "eval", target_id, model, system(), prompt, _schema(props), raw, dry_run)
+        if out is None:
             return
         append_jsonl(ratings_path, {"rater": model, "rater_type": "ai", "target_type": target_type,
                                     "target_id": target_id, **{k: _clean_field(k, out[k]) for k in props}, "created_at": now()})
@@ -207,7 +230,7 @@ def verify(data_dir: Path, timeout: int = 60) -> int:
     runner = ROOT / "checker_runner.py"
     made = 0
     for s in read_jsonl(data_dir / "solutions.jsonl"):
-        if s["id"] in done:
+        if s["id"] in done or s.get("budget_exceeded"):  # pipeline-written rows are not solutions (same rule as eval)
             continue
         p = problems.get(s["problem_id"])
         if not p or p.get("kind") != "checkable":
@@ -241,6 +264,7 @@ def verify(data_dir: Path, timeout: int = 60) -> int:
 
 
 def export_human(data_dir: Path, raters: list[str]) -> Path:
+    check_one_row_per_cell(data_dir)
     problems = all_problems(data_dir)
     ids = [p["id"] for p in problems]
     bad = [i for i in ids if not re.fullmatch(r"P-[0-9a-f]{6}", str(i))]
