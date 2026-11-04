@@ -1,0 +1,16 @@
+{"solution_id": "S-f4f8ee", "problem_id": "P-d6bfbe", "verdict": "pass", "log": "PASS\n", "created_at": "2026-11-04T01:04:04+00:00"}
+{"solution_id": "S-be71ab", "problem_id": "P-d6bfbe", "verdict": "pass", "log": "PASS\n", "created_at": "2026-11-04T01:04:04+00:00"}
+{"solution_id": "S-b252bc", "problem_id": "P-d6bfbe", "verdict": "pass", "log": "PASS\n", "created_at": "2026-11-04T01:04:04+00:00"}
+{"solution_id": "S-4c83ff", "problem_id": "P-fd59f2", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:05+00:00"}
+{"solution_id": "S-826d79", "problem_id": "P-fd59f2", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:05+00:00"}
+{"solution_id": "S-93bc81", "problem_id": "P-65e58b", "verdict": "na", "log": "solution submitted no candidate", "created_at": "2026-11-04T01:04:05+00:00"}
+{"solution_id": "S-f0de17", "problem_id": "P-65e58b", "verdict": "na", "log": "solution submitted no candidate", "created_at": "2026-11-04T01:04:05+00:00"}
+{"solution_id": "S-503d09", "problem_id": "P-5d88c3", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:05+00:00"}
+{"solution_id": "S-d4da1b", "problem_id": "P-e1102e", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:06+00:00"}
+{"solution_id": "S-c67b08", "problem_id": "P-09b1eb", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:06+00:00"}
+{"solution_id": "S-55edfd", "problem_id": "P-cbca09", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:06+00:00"}
+{"solution_id": "S-6310c0", "problem_id": "P-cbca09", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:07+00:00"}
+{"solution_id": "S-f40f2e", "problem_id": "P-65e58b", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:07+00:00"}
+{"solution_id": "S-89489e", "problem_id": "P-5d88c3", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:07+00:00"}
+{"solution_id": "S-d8426b", "problem_id": "P-e1102e", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:07+00:00"}
+{"solution_id": "S-8f5f61", "problem_id": "P-09b1eb", "verdict": "fail", "log": "FAIL\n", "created_at": "2026-11-04T01:04:07+00:00"}
