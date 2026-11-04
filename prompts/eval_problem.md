@@ -12,8 +12,4 @@ You are one evaluator on a panel. Score the problem below using exactly the rubr
 {finite_form}
 </finite_instance>
 
-<stated_importance>
-{why_important}
-</stated_importance>
-
 Return clarity, difficulty, want_to_solve as integers 1–5 or null; richness_list as an array of strings, one derived problem per string (an empty array means none come to mind, which scores 0); known_problem as true, false, or null (null = cannot judge).

@@ -204,8 +204,7 @@ def eval_ai(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
         made += 1
 
     for p in problems.values():
-        prompt = fill(t_prob, statement=p["statement"], finite_form=p.get("finite_form"),
-                      why_important=p.get("why_important"))
+        prompt = fill(t_prob, statement=p["statement"], finite_form=p.get("finite_form"))
         for model in models:
             if (model, "problem", p["id"]) not in done:
                 rate(model, "problem", p["id"], prompt, EVAL_PROBLEM_PROPS)
@@ -271,10 +270,6 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
     if bad or len(set(ids)) != len(ids):
         raise SystemExit(f"export-human refused: problem ids must be unique and look like P-xxxxxx (6 hex); offending: {bad or 'duplicates'}. "
                          "Generate ids with: python -c \"from store import new_id; print(new_id('P'))\"")
-    leaky = [p["id"] for p in problems if p.get("source") == "human"
-             and re.search(r"erdosproblems|https?://|problem\s*#?\s*\d+|#\s*\d+", p.get("why_important") or "", re.I)]
-    if leaky:
-        raise SystemExit(f"export-human refused: why_important names a source (erdosproblems/URL/'problem #N'/'#N') in {leaky}; move it to the note field")
     sols_all = read_jsonl(data_dir / "solutions.jsonl")
     if len(set(s["id"] for s in sols_all)) != len(sols_all):
         raise SystemExit("export-human refused: duplicate solution ids")
@@ -290,7 +285,6 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
         v.sort(key=lambda x: x["id"])  # file order is solver order; blind.json must not carry it
     blind = {"generated_at": now(), "raters": raters, "rubric_md": load_prompt("rubric.md"),
              "problems": sorted([{"id": p["id"], "statement": p["statement"],
-                                  "why_important": p.get("why_important") or "",
                                   "finite_form": p.get("finite_form"),
                                   "solutions": sols.get(p["id"], [])}
                                  for p in problems], key=lambda x: x["id"])}

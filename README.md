@@ -12,7 +12,7 @@
 - `context/<이름>.md` — 컨텍스트 팩. 규격은 `context/README.md`.
 - `human_problems.jsonl` — 인간 대조군 문제. `human_problems.example.jsonl`을 복사해 내용을 바꾼다. 컨텍스트 팩과 겹치지 않게.
   - id는 평가자에게 보이므로 모델 문제와 같은 불투명 id를 쓴다: `python -c "from store import new_id; print(new_id('P'))"`.
-  - `why_important`도 평가자에게 보인다. 출처·문제 번호·URL은 쓰지 말고 `note` 필드에 적는다(`note`는 내보내지 않음). `export-human`이 위반을 발견하면 거부한다.
+  - `why_important`는 평가자(AI·인간)에게 보이지 않는다(데이터에는 남음). 출처·문제 번호·URL은 `note` 필드에 적는다(`note`는 내보내지 않음).
 
 ## 2. 실행 (모든 명령은 재실행 시 끝난 항목을 건너뜀)
 ```bash
@@ -36,7 +36,7 @@ python run.py eval
 - 추론 노력(reasoning effort)은 모든 단계에서 CLI 기본값이고 기록하지 않았다(한계).
 - 모델 실행이 같은 시기에 이뤄지지 않았다(사용량 한도·장애 때문에 sonnet 전부·opus 대부분·fable 11칸은 10-18/19, 나머지 fable은 10-29~11월 초, opus 4칸은 11월 이후).
 - 생성된 검증형 문제 P-fdf0ff, P-2e0477은 유한 사례가 증명상 불가능해 제외했다(`pipeline.EXCLUDED_PROBLEMS`). 자동 생성 검증형 문제에 대한 발견으로 보고한다.
-- 평가자에게 `why_important`를 보여줄지는 아직 결정하지 않았다.
+- 2026-11-04에 결정: AI·인간 평가자 모두에게 `why_important`를 보여주지 않는다(평가 시작 전 적용, 풍요로움 항목 오염 방지). 필드는 데이터에 그대로 둔다.
 - 같은 칸을 다시 시도하면 이전 원본은 `raw/<단계>/<id>_<모델>.attemptN.json`으로 보존한다.
 - 2026-11-04 방향 추가: 기존 실행을 저컨텍스트 조건으로 두고, 최신 논문·Erdős 진전을 넣은 고컨텍스트 조건에서 모델당 open 2개를 다시 생성해 P2 평가만 소규모로 한 번 더 한다(스펙 §16). 준리만가설 사례(사람이 고른 문제, 도구·수시간 에이전트)와 우리 체제(도구 없는 60분 단일 호출)의 차이는 한계로 보고한다.
 
@@ -51,7 +51,6 @@ python run.py verify
 ```bash
 python run.py export-human --raters R1,R2,R3
 ```
-(자동 검사는 사람 문제의 why_important에 대해 URL·erdosproblems·"problem #N"·"#N"만 본다.)
 → `eval_page/index.html`을 Artifact로 게시(또는 파일을 그대로 전달). 평가자는 코드를 입력해 평가하고 마지막에 `ratings_R1.json`을 내려받아 보낸다.
 배포 전에 export를 고정한다: `export-human`을 다시 돌리면 `generated_at`이 바뀌어 평가자의 진행 상태가 처음으로 돌아간다. 평가 중에는 다시 내보내지 않는다.
 ```bash

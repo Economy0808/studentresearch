@@ -96,7 +96,7 @@ details pre{white-space:pre-wrap;font:inherit}
       scale('want_to_solve', '풀고 싶은 정도 (1~5)'),
       $('fieldset', { class: 'scale' }, $('legend', {}, '이미 알려진 문제·정리와 사실상 같은가'), ...[['yes', '예'], ['no', '아니오'], ['na', '판단 불가']].map(([v, t]) => $('label', {}, $('input', { type: 'radio', name: 'known', value: v, required: '' }), ' ' + t))),
       $('button', { type: 'submit' }, '저장하고 다음'));
-    app.append(header('문제 평가'), $('div', { class: 'card' }, $('h3', {}, '문제'), mathBlock(p.statement), p.finite_form ? $('div', {}, $('h4', {}, '유한 인스턴스'), mathBlock(p.finite_form)) : '', $('h4', {}, '제시된 중요성'), mathBlock(p.why_important)), rubric(), $('div', { class: 'card' }, form));
+    app.append(header('문제 평가'), $('div', { class: 'card' }, $('h3', {}, '문제'), mathBlock(p.statement), p.finite_form ? $('div', {}, $('h4', {}, '유한 인스턴스'), mathBlock(p.finite_form)) : ''), rubric(), $('div', { class: 'card' }, form));
     if (prev) { for (const k of ['clarity', 'difficulty', 'want_to_solve']) form.elements[k].value = prev[k] === null ? 'na' : String(prev[k]); form.elements.richness.value = (prev.richness_list || []).join('\n'); form.elements.known.value = prev.known_problem === null ? 'na' : (prev.known_problem ? 'yes' : 'no'); }
   };
 

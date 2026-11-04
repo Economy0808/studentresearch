@@ -166,7 +166,7 @@ def check_prompts(tmp: Path, data: Path) -> None:
     root = Path(__file__).resolve().parent
     expected = {"system.md": set(), "gen_open.md": {"context", "focus"}, "gen_checkable.md": {"context", "focus"},
                 "solve.md": {"statement", "finite_form", "candidate_format"},
-                "eval_problem.md": {"rubric", "statement", "finite_form", "why_important"},
+                "eval_problem.md": {"rubric", "statement", "finite_form"},
                 "eval_solution.md": {"rubric", "statement", "finite_form", "text", "candidate"},
                 "rubric.md": set()}
     for name, want in expected.items():
@@ -184,7 +184,6 @@ def check_prompts(tmp: Path, data: Path) -> None:
             assert "{" + leak + "}" not in text, f"{name} must not reveal {leak}"
     row = json.loads((root / "human_problems.example.jsonl").read_text(encoding="utf-8").strip())
     assert row["source"] == "human" and re.fullmatch(r"P-[0-9a-f]{6}", row["id"]), row
-    assert "erd" not in row["why_important"].lower() and "http" not in row["why_important"].lower(), "why_important must not name the source"
     assert "note" in row
 
 
@@ -338,12 +337,14 @@ def check_eval(tmp: Path, data: Path) -> None:
     assert "채점표" in prompt and '"source"' not in prompt and "grounding" not in prompt
     # AI ratings are stored cleaned, like human ones: out-of-range or wrongly typed values become null (own data dir)
     d = tmp / "badeval" / "data"
-    append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})
+    append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s", "why_important": "WHYSENTINEL"})
     real_call = pipeline.llm.call
-    pipeline.llm.call = lambda *a, **kw: {"clarity": 9, "difficulty": 3, "want_to_solve": True,
+    seen = []
+    pipeline.llm.call = lambda *a, **kw: seen.append(a[2]) or {"clarity": 9, "difficulty": 3, "want_to_solve": True,
                                           "richness_list": ["x", 3, " y "], "known_problem": "no"}
     try:
         assert pipeline.eval_ai(d, ["sonnet"], dry_run=True) == 1
+        assert "WHYSENTINEL" not in seen[0], "raters must not see why_important"
     finally:
         pipeline.llm.call = real_call
     r = read_jsonl(d / "ratings.jsonl")[0]
@@ -409,7 +410,7 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
     blind = json.loads(text)
     assert len(blind["problems"]) == 10 and all(len(p["solutions"]) == 3 for p in blind["problems"] if p["id"] != HP)
     assert all([s["id"] for s in p["solutions"]] == sorted(s["id"] for s in p["solutions"]) for p in blind["problems"]), "solutions must be ordered by opaque id, not solver"
-    for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"gen_key"', '"kind"', '"note"', "erdosproblems"):
+    for leak in ('"source"', '"solver"', '"grounding"', '"why_hard"', '"why_important"', '"gen_key"', '"kind"', '"note"', "erdosproblems"):
         assert leak not in text, f"blind.json leaks {leak}"
     assert "채점표" in blind["rubric_md"] and blind["raters"] == ["R1", "R2"]
     rows = [{"rater": "R1", "target_type": "problem", "target_id": p["id"], "clarity": 4, "difficulty": None,
@@ -445,8 +446,6 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
     # export refuses anything that could reveal a source (own data dirs)
     cases = {"hid": ({"id": "P-h00001", "statement": "s"}, None),
              "dup": ({"id": "P-0a0a0a", "statement": "s"}, None),
-             "src": ({"id": "P-0b0b0b", "source": "human", "statement": "s", "why_important": "See Problem #12 on the site."}, None),
-             "src2": ({"id": "P-0b0c0c", "source": "human", "statement": "s", "why_important": "Item #7 of a famous list."}, None),
              "sid": ({"id": "P-0c0c0c", "statement": "s"}, {"id": "S-opus", "problem_id": "P-0c0c0c", "text": "t"}),
              "sdup": ({"id": "P-0d0d0d", "statement": "s"}, {"id": "S-0a0a0a", "problem_id": "P-0d0d0d", "text": "t"})}
     for name, (prob, sol_row) in cases.items():
@@ -464,10 +463,6 @@ def check_roundtrip(tmp: Path, data: Path) -> None:
             assert not (d / "blind.json").exists(), f"{name}: a refused export must not write blind.json"
         else:
             raise AssertionError(f"export_human must refuse case {name!r}")
-    # the source check only applies to human rows: an AI-written why_important may mention "problem #3"
-    d = tmp / "leak" / "aiok" / "data"
-    append_jsonl(d / "problems.jsonl", {"id": "P-0f0f0f", "source": "opus", "statement": "s", "why_important": "Generalizes problem #3 of the pack."})
-    assert pipeline.export_human(d, ["R1"]).exists()
     # a row whose target is not in blind.json (stale export) is kept but warned about
     d = tmp / "stale" / "data"
     append_jsonl(d / "problems.jsonl", {"id": "P-0e0e0e", "statement": "s"})
