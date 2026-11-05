@@ -1,0 +1,577 @@
+<title>학자연 실험 설계 안내서</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<script>window.MathJax={tex:{inlineMath:[['$','$']],displayMath:[['$$','$$']]},svg:{fontCache:'global'},options:{enableMenu:false}};</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.min.js"></script>
+<style>
+/* Layout: one long reading column for a non-mathematician catching up on their own experiment. */
+:root {
+  --bg: #f3f5f8; --surface: #ffffff; --tint: #e9edf6; --fg: #1a2230; --muted: #566072; --line: #d4dae4;
+  --accent: #2f45a3; --good: #1c6a47; --warn: #8b5a00; --bad: #a42f2a; --good-bg: #e2f2ea; --warn-bg: #f8eed8; --bad-bg: #f9e3e1; --gray-bg: #e9ecf1;
+  --sans: "IBM Plex Sans KR", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #12161d; --surface: #1b212b; --tint: #232b3b; --fg: #e5e9f0; --muted: #a2adbd; --line: #343d4c;
+  --accent: #9fb0f5; --good: #79d3a6; --warn: #e6bb62; --bad: #f29a93; --good-bg: #17352a; --warn-bg: #3a2e13; --bad-bg: #40211f; --gray-bg: #2a313d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #12161d; --surface: #1b212b; --tint: #232b3b; --fg: #e5e9f0; --muted: #a2adbd; --line: #343d4c;
+  --accent: #9fb0f5; --good: #79d3a6; --warn: #e6bb62; --bad: #f29a93; --good-bg: #17352a; --warn-bg: #3a2e13; --bad-bg: #40211f; --gray-bg: #2a313d; color-scheme: dark }
+body { background: var(--bg); color: var(--fg); font: 400 17px/1.85 var(--sans);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 44px 96px; }
+main { max-width: 760px; margin-inline: auto; display: flex; flex-direction: column; gap: 64px; }
+main > *, section > * { min-width: 0; }
+section { display: flex; flex-direction: column; gap: 16px; scroll-margin-top: 16px; }
+h1 { font-size: 34px; line-height: 1.25; margin: 0 0 8px; text-wrap: balance; }
+h2 { font-size: 24px; line-height: 1.35; margin: 0; padding-top: 16px; border-top: 3px solid var(--accent); text-wrap: balance; }
+h3 { font-size: 18px; line-height: 1.45; margin: 14px 0 0; }
+p, ul, ol { margin: 0; }
+ul, ol { padding-left: 24px; display: flex; flex-direction: column; gap: 10px; }
+.lede { color: var(--muted); }
+.meta { color: var(--muted); font-size: 14.5px; line-height: 1.7; }
+.scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.65; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+tr:last-child > * { border-bottom: 0; }
+thead th { color: var(--muted); font-weight: 500; white-space: nowrap; background: var(--tint); }
+tbody th { font-weight: 500; white-space: nowrap; }
+td.m { font-family: var(--mono); font-size: 14px; white-space: nowrap; }
+td.self { background: var(--tint); font-weight: 700; }
+.wide { min-width: 860px; }
+.xwide { min-width: 1040px; }
+.mid { min-width: 600px; }
+code { font-family: var(--mono); font-size: .88em; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.toc { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 4px 20px; padding: 0; list-style: none; }
+.call { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.call.urgent { background: var(--bad-bg); border-color: var(--bad); }
+.call.urgent strong { color: var(--bad); }
+.math-box { background: var(--surface); border: 1px solid var(--line); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; overflow-x: auto; font-size: 16px; }
+.label { font-size: 13px; font-weight: 700; color: var(--accent); letter-spacing: .02em; }
+.big { font-family: var(--mono); font-size: 15px; background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; overflow-x: auto; white-space: nowrap; }
+.chip { display: inline-block; font-size: 13px; line-height: 1.5; padding: 2px 8px; }
+.chip.g { background: var(--gray-bg); color: var(--fg); }
+.chip.w { background: var(--warn-bg); color: var(--warn); }
+.chip.b { background: var(--bad-bg); color: var(--bad); }
+.chip.k { background: var(--good-bg); color: var(--good); }
+</style>
+
+<main>
+<header>
+  <h1>학자연 실험 설계 안내서</h1>
+  <p class="lede">「AI는 지식폭발을 야기할 것인가」 본 실험을 처음부터 끝까지 따라가는 문서입니다. 수학을 몰라도 실험의 구조를 이해할 수 있게 썼습니다. 수학 문제 자체를 풀이하지는 않고, 구조를 이해하는 데 필요한 말만 풀어 설명합니다. 계획서, 코드, 프롬프트, 실제 데이터를 다시 읽어 2026-11-06에 작성했으며, 수치는 데이터 커밋 <code>3a67f53</code> 기준입니다.</p>
+</header>
+
+<section>
+  <p>먼저 말씀드릴 것이 있습니다. 설계자에게 하나씩 묻지 않고 제가 정한 것이 많았습니다. 10월 17일에 전체 설계를 한 번에 승인받았는데, 그 안의 숫자와 세부 기준을 따로 설명하지 않았습니다. 고컨텍스트 조건은 설계자의 의도와 다르게 먼저 실행하기까지 했습니다. 무엇을 누가 정했는지는 <a href="#decisions">결정 기록</a>에 구분해 적었습니다.</p>
+  <div class="call urgent">
+    <p><strong>11월 7일 07:03에 예약 실행이 있습니다.</strong> 고컨텍스트 Fable 실행은 11월 6일에 예약에서 뺐습니다. 지금 남은 예약은 Fable 풀이, Fable 평가, 새 풀이에 대한 Sonnet과 Opus의 평가, 체커 검증입니다.</p>
+    <p>아직 정해야 할 것은 <strong>평가까지 돌릴지</strong>입니다. 풀이는 채점표와 상관없지만, 평가는 채점표를 쓰기 때문에 채점표를 바꾸면 다시 해야 합니다. 답이 없으면 평가까지 진행됩니다. 자세한 내용은 <a href="#todo">지금 정해야 할 것</a>에 있습니다.</p>
+  </div>
+</section>
+
+<nav aria-label="목차">
+  <ul class="toc">
+    <li><a href="#answers">메모하신 질문 6개의 답</a></li>
+    <li><a href="#why">이 실험이 묻는 것</a></li>
+    <li><a href="#walk">전체 과정 한 바퀴</a></li>
+    <li><a href="#math">수학 배경: 이것만 알면 됩니다</a></li>
+    <li><a href="#kinds">open 문제와 checkable 문제</a></li>
+    <li><a href="#context">컨텍스트: 모델이 읽는 자료</a></li>
+    <li><a href="#control">대조군: 사람이 낸 문제</a></li>
+    <li><a href="#solve">풀이 단계</a></li>
+    <li><a href="#rate">평가 단계와 척도</a></li>
+    <li><a href="#metrics">무엇을 계산하고 무엇이 나왔나</a></li>
+    <li><a href="#validity">문제 성립 현황</a></li>
+    <li><a href="#high">고컨텍스트 조건</a></li>
+    <li><a href="#decisions">결정 기록</a></li>
+    <li><a href="#diff">계획서와 달라진 점</a></li>
+    <li><a href="#todo">지금 정해야 할 것</a></li>
+  </ul>
+</nav>
+
+<section id="answers">
+  <h2>메모하신 질문 6개의 답</h2>
+
+  <h3>1. 문제 생성 컨텍스트가 Erdős 문제인가?</h3>
+  <p>절반만 맞습니다. 컨텍스트는 모델이 문제를 내기 전에 읽는 자료이고, 내용은 <strong>최근에 증명된 수학 결과 9개의 요약</strong>입니다. 그중 7개가 이미 풀린 Erdős 문제와 연결되어 있습니다. 한편 대조군은 <strong>아직 안 풀린</strong> Erdős 문제 9개입니다. 둘 다 Erdős 문제와 관련이 있어 헷갈리기 쉽지만 역할이 반대입니다. 컨텍스트는 "최근에 여기까지 풀렸다"는 배경 자료이고, 대조군은 AI 문제와 비교할 사람의 문제입니다. 두 목록의 문제 번호는 겹치지 않습니다.</p>
+
+  <h3>2. 사람의 지식 팽창에 유효한지 어떤 기준으로 응답받는가?</h3>
+  <p><strong>그것을 직접 묻는 문항은 없습니다.</strong> 계획서는 "풍요로움"을 대신 씁니다. 평가자에게 "이 문제가 풀리면 쉬워지는 다른 문제"를 적게 하고 그 개수를 재는 방식입니다. 많은 문제를 여는 문제일수록 지식을 넓힌다고 보는 것입니다. 그러나 이 점수가 몇 점이면 유효하다는 기준선은 계획서에도 설계서에도 없습니다. "사람이 이해하고 다음 문제로 이을 수 있는가"를 직접 재는 것은 계획서 2.4의 이해 실험인데, 이 실험은 아직 도구도 일정도 없습니다.</p>
+
+  <h3>3. 각 항목의 척도는 무엇인가?</h3>
+  <p>명확성, 난이도, 풀고 싶은 정도, 풀이의 정확성과 명료성은 1점에서 5점까지입니다. 풍요로움은 점수가 아니라 적어 낸 개수이고 상한이 없습니다. 이미 알려진 문제인지와 이해 가능 여부는 예, 아니오, 판단 불가 중에 고릅니다. 각 점수의 기준 문장은 <a href="#scales">척도표</a>에 그대로 옮겼습니다.</p>
+
+  <h3>4. 8×3+9는 왜 그렇게 정했는가?</h3>
+  <p>8은 모델 하나가 내는 문제 수로, open 5개와 checkable 3개입니다. 3은 모델 수입니다. 9는 사람이 낸 대조군입니다. 대조군을 넣는 것 자체는 계획서 2.2에 있는 설계입니다. 그러나 <strong>8과 9, 그리고 5 대 3이라는 숫자는 계획서에 없고 제가 정했습니다.</strong> 설계서에도 왜 이 숫자인지 근거를 적지 않았고, 비율을 따로 여쭌 기록도 없습니다.</p>
+
+  <h3>5. checkable 15건은 6개 + Erdős 9개인가?</h3>
+  <p>아닙니다. checkable은 모델당 3개씩 총 <strong>9개</strong>입니다. 그중 2개를 제외해 지금 유효한 것은 7개입니다. 대조군 Erdős 문제는 <strong>9개 모두 open</strong>이어서 checkable이 하나도 없습니다. 데이터에서 15에 맞는 수는 모델이 낸 open 문제 수인 5×3입니다. 또한 문헌 대조에서 "가까운 변형이 있음" 판정도 15건이어서, 15라는 숫자가 다른 뜻으로 섞였을 수 있습니다.</p>
+
+  <h3>6. 문제 성립 현황은 어떤가?</h3>
+  <p>모델이 낸 24개 중 2개는 요구한 답이 존재할 수 없어서 제외했습니다. 1개는 문제의 전제가 사실과 달랐지만 아직 남아 있습니다. 유효한 22개 중 21개는 비슷하거나 같은 질문이 이미 문헌에 있었습니다. 그리고 <strong>open 15개가 수학적으로 말이 되는 문제인지 사람 수학자가 확인한 적은 아직 없습니다.</strong> 자세한 내용은 <a href="#validity">문제 성립 현황</a>에 있습니다.</p>
+</section>
+
+<section id="why">
+  <h2>이 실험이 묻는 것</h2>
+  <p>AI 기업들은 벤치마크 점수로 자사 모델의 우수함을 보여 줍니다. 이 점수만 보면 AI가 좋아질수록 사람의 지식도 함께 폭발할 것처럼 보입니다. 계획서는 이 주장이 네 가지 전제가 모두 참일 때만 성립한다고 보고, 결론을 직접 다루는 대신 전제를 하나씩 검증합니다.</p>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>전제</th><th>쉽게 말하면</th><th>어떻게 확인하나</th><th>지금 상태</th></tr></thead>
+    <tbody>
+    <tr><td>P1</td><td>벤치마크 점수가 높으면 정말 문제를 잘 푼다</td><td>벤치마크가 무엇을 재는지 문헌으로 분석</td><td>이 저장소에는 수행 기록이 없음</td></tr>
+    <tr><td>P2</td><td>문제를 잘 푸는 모델은 좋은 문제도 잘 낸다</td><td>등급이 다른 모델이 낸 문제의 질을 비교</td><td>AI 평가자 2명의 잠정 점수만 있음</td></tr>
+    <tr><td>P3</td><td>상위 모델은 하위 모델이 못 푸는 문제를 푼다</td><td>"낸 모델은 못 풀고 상위 모델은 푸는" 문제를 찾음</td><td>지금까지 없음. Fable 칸이 남아 바뀔 수 있음</td></tr>
+    <tr><td>P4</td><td>AI가 낸 문제와 풀이가 사람의 지식이 된다</td><td>사람이 판단하고 이해할 수 있는지 측정</td><td>사람 평가가 0건이라 아직 측정 불가</td></tr>
+    </tbody>
+  </table></div>
+  <p>계획서가 핵심으로 꼽은 것은 P2와 P4입니다. P2가 깨지면 "AI가 난제를 생산한다"는 생각이 무너지고, P4가 깨지면 AI가 아무리 앞서가도 사람의 지식은 늘지 않기 때문입니다. P4가 약할 때 사람이 무엇을 할 수 있고 해야 하는지 묻는 것이 연구 목적 2입니다.</p>
+  <p><strong>왜 수학인가:</strong> 계획서는 난제를 "지금 사람의 지식으로는 풀리지 않는 문제", 곧 지식의 경계를 표시하는 이정표로 봅니다. 수학은 경계가 비교적 뚜렷하고 일부 답은 기계로 확인할 수 있어 이 실험에 맞습니다.</p>
+  <p><strong>세 모델을 쓰는 이유:</strong> Sonnet, Opus, Fable은 같은 회사의 성능 등급이 다른 모델입니다. 이 순서로 등급이 높습니다. 같은 조건을 주고 등급에 따라 결과가 달라지는지 봅니다.</p>
+</section>
+
+<section id="walk">
+  <h2>전체 과정 한 바퀴</h2>
+  <p>실험은 문제 내기, 풀기, 평가하기의 세 단계입니다. 실제 순서대로 따라가면 다음과 같습니다.</p>
+  <ol>
+    <li><strong>자료 읽히기.</strong> 세 모델에게 같은 수학 자료를 읽힙니다. 이 자료가 컨텍스트입니다.</li>
+    <li><strong>문제 내기.</strong> 각 모델이 "아직 풀리지 않았다고 믿는 좋은 문제"를 8개씩 냅니다. open 5개, checkable 3개입니다. 합쳐서 24개입니다.</li>
+    <li><strong>대조군 섞기.</strong> 사람이 낸 미해결 Erdős 문제 9개를 더합니다. 이제 33개입니다. 그중 2개는 뒤에 답이 존재할 수 없음이 밝혀져 빠졌고, 유효한 문제는 31개입니다.</li>
+    <li><strong>풀기.</strong> 세 모델이 31개 문제를 전부 풉니다. 문제 하나와 모델 하나의 조합을 이 문서에서는 "칸"이라고 부릅니다. 31 × 3 = 93칸입니다. 모델은 인터넷이나 계산 도구 없이 한 번의 호출로 답합니다.</li>
+    <li><strong>기계 채점.</strong> checkable 문제의 답은 체커라는 코드가 맞고 틀림을 판정합니다.</li>
+    <li><strong>AI 평가.</strong> 세 모델이 평가자가 되어 문제와 풀이에 점수를 줍니다.</li>
+    <li><strong>사람 평가.</strong> 수학 대학원생과 교수 3~5명이 같은 채점표로 점수를 줍니다. 누가 만든 문제와 풀이인지는 숨깁니다.</li>
+    <li><strong>분석.</strong> 등급에 따라 문제의 질이 오르는지, 상위 모델이 더 푸는지, 사람이 따라갈 수 있는지 계산합니다.</li>
+  </ol>
+  <div class="big">
+    <span>모델당 8문제 (open 5 + checkable 3) × 모델 3 = 24문제</span>
+    <span>24문제 + 대조군 9문제 = 33문제</span>
+    <span>33문제 − 제외 2문제 = 유효 31문제</span>
+    <span>31문제 × 풀이 모델 3 = 93칸</span>
+  </div>
+  <h3>지금 어디까지 왔나</h3>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>단계</th><th>진행</th><th>설명</th></tr></thead>
+    <tbody>
+    <tr><td>풀이</td><td class="m">86/93칸</td><td>남은 7칸은 모두 Fable입니다. Fable 주간 사용 한도가 11월 7일 07:00에 풀립니다.</td></tr>
+    <tr><td>AI 평가</td><td class="m">230/345건</td><td>Sonnet과 Opus는 끝났고 Fable은 시작 전입니다. 지금 분모는 31문제와 풀이 84개를 평가자 3명이 보는 수입니다. 새 풀이가 나오면 분모도 늘어납니다.</td></tr>
+    <tr><td>체커 판정</td><td class="m">16건</td><td>통과 3건, 실패 11건, 답을 제출하지 않음 2건입니다. 통과 3건은 모두 같은 문제에서 나왔습니다.</td></tr>
+    <tr><td>문헌 대조</td><td class="m">24건</td><td>모델이 낸 문제가 이미 있는지 검색으로 찾았습니다. 문제당 검색 2~3회였고 전문가 검토 전입니다.</td></tr>
+    <tr><td>사람 평가</td><td class="m">0건</td><td>평가자를 아직 섭외하지 못했습니다. 지금 가장 큰 병목입니다.</td></tr>
+    <tr><td>고컨텍스트 조건</td><td class="m">멈춤</td><td>Sonnet과 Opus 몫이 먼저 실행되었고, 이후 진행은 설계자 결정을 기다립니다. <a href="#high">자세히</a></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="math">
+  <h2>수학 배경: 이것만 알면 됩니다</h2>
+  <p>문제에 나오는 기호를 읽지 못해도 실험 구조를 이해하는 데는 지장이 없습니다. 다만 아래 내용은 알아 두면 실험의 판단들이 왜 필요한지 보입니다.</p>
+
+  <h3>수학에서 "풀었다"는 말의 무게</h3>
+  <p>수학 문제가 풀렸다는 것은 예를 몇 개 확인했다는 뜻이 아니라, 모든 경우에 성립함을 빈틈없이 증명했다는 뜻입니다. 증명이 맞는지는 전문가가 읽어야 알 수 있고, 전문가도 오래 걸립니다. 그래서 이 실험에는 "모델이 풀었다고 말한 것"과 "정말 풀린 것"을 구분하는 장치가 필요합니다. 체커와 평가자가 그 장치입니다.</p>
+
+  <h3>미해결 문제, 또는 open problem</h3>
+  <p>아직 아무도 증명하거나 반증하지 못한 문제입니다. 우리 실험에서는 모델이 "미해결이라고 믿는" 문제를 냅니다. 모델이 그렇게 믿는다고 정말 미해결인 것은 아닙니다. 이미 풀렸거나 이미 누가 물어본 문제일 수 있어서 문헌 대조를 따로 했습니다.</p>
+
+  <h3>Erdős 문제</h3>
+  <p>헝가리 수학자 에르되시 팔(1913~1996)은 평생 수많은 문제를 제기했습니다. 그 문제들이 erdosproblems.com에 1,000개 넘게 정리되어 있고, 풀렸는지 표시되어 있습니다. 사람이 낸 좋은 문제의 표본으로 쓰기 좋고, 최근에 풀린 것과 아직 안 풀린 것을 한곳에서 구할 수 있어서 골랐습니다.</p>
+
+  <h3>가법 조합론</h3>
+  <p>수의 모임, 곧 집합을 서로 더했을 때 어떤 규칙이 생기거나 생기지 않는지 연구하는 분야입니다. 실험 분야로 고른 이유는 세 가지입니다. Erdős 문제가 많이 몰려 있고, 문제 진술이 짧아 평가자의 부담이 적고, 구체적인 숫자로 바꾸기 쉬워 기계 채점과 잘 맞습니다. 10월 17일에 제가 추천했고 승인받았습니다.</p>
+
+  <h3>표에 자주 나오는 말 세 가지</h3>
+  <ul>
+    <li><strong>등차수열:</strong> 간격이 일정한 수의 나열입니다. 3, 7, 11이 그 예입니다. 많은 문제가 "등차수열이 생기지 않게 수를 최대한 많이 고르면 몇 개까지 가능한가"를 묻습니다.</li>
+    <li><strong>시돈 집합:</strong> 두 수를 골라 더한 값이 모두 다른 집합입니다. {1, 2, 5}에서 나오는 합은 2, 3, 4, 6, 7, 10으로 모두 다릅니다.</li>
+    <li><strong>기저:</strong> 그 집합의 수 몇 개를 더하면 충분히 큰 정수를 전부 만들 수 있는 집합입니다. 동전 몇 종류로 모든 금액을 만드는 것과 비슷합니다.</li>
+  </ul>
+</section>
+
+<section id="kinds">
+  <h2>open 문제와 checkable 문제</h2>
+  <p>모델은 두 종류의 문제를 냅니다. 차이는 <strong>답이 맞는지를 어떻게 확인하느냐</strong>에 있습니다.</p>
+
+  <h3>open 문제: 사람이 읽고 판단해야 하는 문제</h3>
+  <p>"이런 성질이 항상 성립하는가?"처럼 일반적인 형태로 묻는 문제입니다. 답은 긴 증명 글이 됩니다. 컴퓨터로 맞고 틀림을 바로 판정할 수 없어서 평가자가 읽고 점수를 줍니다. 논문을 심사하는 일에 가깝습니다.</p>
+  <div class="math-box">
+    <p class="label">실제 예시: P-0ec34a (Opus가 낸 open 문제)</p>
+    <p>For $N\in\mathbb N$ let $R(N)$ be the largest size of a set $A\subseteq[N]$ that contains no triple $x,\ x+d^2,\ x+2d^2$ with $x\in\mathbb Z$ and $d\in\mathbb N$, i.e. no $3$-term arithmetic progression whose common difference is a nonzero perfect square. Is it true that $R(N)\ll_C N/(\log N)^C$ for every $C&gt;0$? More strongly, is there an absolute constant $c&gt;0$ such that $R(N)\le N\exp(-(\log N)^c)$ for all large $N$?</p>
+    <p class="meta">기호를 몰라도 괜찮습니다. 간격이 제곱수인 등차수열을 피해서 수를 고를 때 얼마나 많이 고를 수 있는지 묻는 문제입니다. 답을 자동으로 검사할 방법은 없습니다.</p>
+  </div>
+
+  <h3>checkable 문제: 컴퓨터가 채점할 수 있는 문제</h3>
+  <p>일반적인 문제에 더해, 숫자를 구체적으로 정한 작은 퍼즐을 함께 내게 합니다. 이 문서에서는 이 작은 퍼즐을 "유한판"이라고 부릅니다. 모델은 세 가지를 함께 제출합니다.</p>
+  <ul>
+    <li><strong>일반 문제:</strong> open과 같은 형태의 진술입니다.</li>
+    <li><strong>유한판:</strong> 숫자를 고정한 퍼즐입니다. 답은 숫자 목록처럼 구체적인 물건입니다.</li>
+    <li><strong>체커:</strong> 제출된 답이 유한판의 조건을 만족하는지 검사하는 파이썬 코드입니다. 문제를 낸 모델이 직접 씁니다.</li>
+  </ul>
+  <p>풀이 모델은 답을 숫자 목록으로 내고, 체커가 맞으면 통과, 틀리면 실패로 판정합니다. 자동 채점 시험과 비슷합니다.</p>
+  <div class="math-box">
+    <p class="label">실제 예시: P-d6bfbe (Sonnet이 낸 checkable 문제)</p>
+    <p>Let $r_3(N)$ be the largest size of a subset of $[N]=\{1,\dots,N\}$ containing no non-trivial 3-term arithmetic progression. Kelley–Meka give $r_3(N)\le N\exp(-c(\log N)^{\beta})$, while Behrend's construction gives $r_3(N)\ge N\exp(-C\sqrt{\log N})$. Problem: construct, for infinitely many $N$, a 3-AP-free set $A\subseteq[N]$ with $|A|\ge N\exp(-o(\sqrt{\log N}))$, i.e. beat Behrend's exponent $\sqrt{\log N}$ asymptotically (or prove that no such set exists for large $N$ by improving the upper bound to $N\exp(-c\sqrt{\log N})$).</p>
+    <p class="label">유한판</p>
+    <p>Find a subset $A\subseteq\{1,\dots,200\}$ with $|A|\ge 37$ containing no non-trivial 3-term arithmetic progression (no distinct $x&lt;y&lt;z$ in $A$ with $x+z=2y$).</p>
+    <p class="label">제출 형식</p>
+    <p>a JSON array of at least 37 distinct integers in the range 1..200</p>
+    <p class="meta">쉽게 말하면 유한판은 "1부터 200까지에서, 3항 등차수열이 생기지 않게 37개 이상 골라라"입니다. 일반 문제는 훨씬 어려운 질문으로, 문헌 대조에서도 아직 열려 있는 문제로 나왔습니다.</p>
+  </div>
+
+  <h3>왜 두 종류로 나누었나</h3>
+  <p>P3를 재려면 "하위 모델은 못 풀고 상위 모델은 푸는" 문제가 필요합니다. 그런데 진짜 난제만 있으면 세 모델이 전부 못 풀어서 모든 성공률이 0이 되고, 등급 차이를 볼 수 없습니다. 그래서 등급 차이가 드러날 만한 난이도의 문제가 필요했습니다. 계획서 2.2도 "생성 문제의 일부를 기계로 확인 가능한 형태로 한정한다"고 썼습니다. open은 주로 P2와 P4에, checkable은 주로 P3에 쓰입니다. 계획서의 Lean 4 형식 증명은 Lean을 설치하지 않아 빠졌습니다.</p>
+
+  <h3>checkable의 한계 두 가지</h3>
+  <ul>
+    <li><strong>유한판을 풀어도 일반 문제가 풀린 것은 아닙니다.</strong> 위 예시에서 세 모델의 답이 모두 체커를 통과했지만, 일반 문제는 그대로 열려 있습니다. 유한판이 너무 쉬웠던 것입니다.</li>
+    <li><strong>문제를 낸 모델이 체커까지 씁니다.</strong> 체커가 틀렸거나 유한판에 답이 아예 없을 수 있습니다. 실제로 2개가 답이 없는 문제였습니다. 그래서 체커 검토 단계를 두었습니다.</li>
+  </ul>
+
+  <h3>비율</h3>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th></th><th>open</th><th>checkable</th></tr></thead>
+    <tbody>
+    <tr><th scope="row">모델 하나당</th><td>5개</td><td>3개</td></tr>
+    <tr><th scope="row">세 모델 합계</th><td>15개</td><td>9개</td></tr>
+    <tr><th scope="row">대조군</th><td>9개</td><td>0개</td></tr>
+    <tr><th scope="row">제외 뒤 유효</th><td>24개</td><td>7개</td></tr>
+    <tr><th scope="row">성공 판정</th><td>모델이 "해결"이라 말하고, 자기를 뺀 AI 평가자의 정확성 평균이 4점 이상</td><td>체커 통과</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="context">
+  <h2>컨텍스트: 모델이 읽는 자료</h2>
+  <p>계획서는 세 모델에게 "수학의 한 소분야에 대한 기존 결과"를 똑같이 주라고 했습니다. 이 자료를 컨텍스트 팩이라고 부릅니다. 파일은 <code>context/additive_comb.md</code>이고 약 1,560단어입니다. 구성은 용어 정의, 최근 결과 9개, 문제 형식 예시 3개입니다.</p>
+  <p><strong>최근 결과를 넣은 이유:</strong> 모델이 학습할 때 이미 본 내용이면 새 문제를 내는지 외운 것을 꺼내는지 구분하기 어렵습니다. 계획서 2.5의 학습 데이터 오염 통제입니다.</p>
+  <p><strong>누가 만들었나:</strong> 제가 erdosproblems.com과 arXiv에서 모아 만들었습니다. 파일 첫 줄의 <code>DRAFT</code>는 "연구자 검토 전"이라는 표시입니다. 검토하신 기록 없이 이 표시가 남은 채로 생성이 돌았고, 모델들도 이 줄까지 읽었습니다.</p>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>컨텍스트에 있는 결과</th><th>출처</th><th>관련 Erdős 번호</th><th>초점으로 쓰였나</th></tr></thead>
+    <tbody>
+    <tr><td>등차수열을 피하는 집합의 크기</td><td>Kelley, Meka 2023</td><td>#140</td><td>open, checkable</td></tr>
+    <tr><td>시돈 집합이면서 기저인 집합</td><td>Pilatte 2023</td><td>#157</td><td>open, checkable</td></tr>
+    <tr><td>표현 수가 적은 기저를 명시적으로 구성</td><td>Jain, Pham, Sawhney, Zakharov 2024</td><td>#29</td><td>open, checkable</td></tr>
+    <tr><td>확장되지 않는 시돈 집합</td><td>Alexeev, Mixon 2025</td><td>#707</td><td>open</td></tr>
+    <tr><td>기저의 세 성질의 독립성</td><td>Larsen 2026</td><td>#869, #871</td><td>open</td></tr>
+    <tr><td>색칠과 밀도의 관계</td><td>Reiher, Rödl, Sales 2023</td><td>#847</td><td>쓰이지 않음</td></tr>
+    <tr><td>조밀한 집합 안의 무한 합집합</td><td>Kra, Moreira, Richter, Robertson 2022</td><td>#656</td><td>쓰이지 않음</td></tr>
+    <tr><td>합이 생기지 않는 큰 부분집합</td><td>Bedert 2025</td><td>없음</td><td>쓰이지 않음</td></tr>
+    <tr><td>긴 등차수열을 피하는 집합의 크기</td><td>Leng, Sah, Sawhney 2024</td><td>없음</td><td>쓰이지 않음</td></tr>
+    </tbody>
+  </table></div>
+  <h3>초점이란 무엇인가</h3>
+  <p>모델은 팩 전체를 읽지만, 프롬프트는 호출마다 "이 절의 빈틈에서 문제를 내라"고 절 하나를 지정합니다. 이것이 초점입니다. 첫 번째 호출은 첫 번째 결과를, 두 번째 호출은 두 번째 결과를 받습니다.</p>
+  <p>open은 5번 호출하므로 앞의 5개 절이, checkable은 3번 호출하므로 앞의 3개 절이 쓰였습니다. 그 결과 <strong>뒤의 4개 절은 초점으로 쓰인 적이 없습니다.</strong> 또 세 모델이 같은 절에서 문제를 내므로 비슷한 문제가 반복됩니다. 등차수열 관련 문제가 많은 이유입니다. 모델끼리 비교하기에는 공정하지만, 분야를 고르게 다루지는 못합니다. 코드 구조에서 나온 결과이고 제가 미리 말씀드리지 않았습니다.</p>
+  <p class="meta">프롬프트 원문은 <code>prompts/gen_open.md</code>와 <code>prompts/gen_checkable.md</code>에 있습니다. 모델이 낸 문제 전체는 <a href="https://claude.ai/artifact/GC91QE1YwWWmF5Ge79Jncc">생성된 문제 열람</a>에서 수식으로 볼 수 있습니다.</p>
+</section>
+
+<section id="control">
+  <h2>대조군: 사람이 낸 문제</h2>
+  <p><strong>왜 넣었나:</strong> 점수만으로는 뜻을 알 수 없기 때문입니다. AI가 낸 문제의 풍요로움이 6점이라고 해도, 사람이 낸 좋은 문제가 몇 점인지 알아야 높은지 낮은지 말할 수 있습니다. 그래서 사람이 낸 문제를 같은 채점표로 함께 평가합니다. 계획서 2.2에 있는 설계입니다.</p>
+  <p><strong>어떻게 골랐나:</strong> 계획서는 "Erdős 문제 등"이라고만 적었습니다. 9개를 고른 것은 저입니다. 컨텍스트와 겹치지 않는 문제 중에서 2026-10-17 기준으로 미해결 표시를 확인했습니다. 처음 넣은 #138은 이미 증명이 올라와 있어 #200으로 바꿨습니다. 진술도 제가 정리해 썼습니다. 9라는 수의 근거는 적어 두지 않았습니다.</p>
+  <div class="math-box">
+    <p class="label">대조군 예시: Erdős #30</p>
+    <p>A set $S\subset\mathbb N$ is a Sidon set if all sums $a+b$ with $a,b\in S$, $a\le b$, are distinct. Let $h(N)$ be the maximum size of a Sidon set contained in $\{1,\dots,N\}$. Is it true that, for every $\varepsilon&gt;0$, $h(N)=N^{1/2}+O_\varepsilon(N^{\varepsilon})$?</p>
+  </div>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>번호</th><th>실험 안의 이름</th><th>무엇을 묻나</th><th>"이미 알려진 문제"라고 답했나 (Sonnet / Opus)</th></tr></thead>
+    <tbody>
+<tr><td class="m">#30</td><td class="m">P-971c68</td><td>시돈 집합의 최대 크기가 $\sqrt N$에 얼마나 가까운가</td><td>예 / 예</td></tr>
+<tr><td class="m">#39</td><td class="m">P-80e65f</td><td>무한 시돈 집합이 거의 $\sqrt N$ 밀도를 가질 수 있는가</td><td>예 / 예</td></tr>
+<tr><td class="m">#52</td><td class="m">P-d60b86</td><td>합집합과 곱집합 중 하나는 반드시 큰가 (합-곱 추측, 정수판)</td><td>예 / 예</td></tr>
+<tr><td class="m">#28</td><td class="m">P-7cd8d7</td><td>거의 모든 수를 두 원소의 합으로 쓰는 집합은 표현 수가 반드시 무한히 커지는가</td><td>예 / 예</td></tr>
+<tr><td class="m">#241</td><td class="m">P-0ffa91</td><td>세 원소 합이 모두 다른 집합의 최대 크기가 $N^{1/3}$에 점근하는가</td><td>예 / 예</td></tr>
+<tr><td class="m">#66</td><td class="m">P-ff12c6</td><td>표현 수가 정확히 $\log n$ 비율로 자라는 집합이 있는가</td><td>예 / 예</td></tr>
+<tr><td class="m">#200</td><td class="m">P-0a75c6</td><td>소수만으로 된 등차수열의 최대 길이가 $\log N$보다 작은가</td><td>아니오 / 예</td></tr>
+<tr><td class="m">#36</td><td class="m">P-c2d5cd</td><td>두 집합으로 나눌 때 같은 차가 나타나는 횟수의 최적 상수</td><td>아니오 / 예</td></tr>
+<tr><td class="m">#324</td><td class="m">P-755035</td><td>$f(a)+f(b)$가 모두 다른 정수계수 다항식이 있는가</td><td>아니오 / 예</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>한계가 두 가지 있습니다.</strong> 첫째, 유명한 문제는 출처를 숨겨도 평가자가 알아볼 수 있습니다. 위 표처럼 Opus는 9개 모두, Sonnet은 6개를 이미 알려진 문제로 표시했습니다. 둘째, 대조군은 전부 open이라 체커로 비교할 수 없습니다.</p>
+</section>
+
+<section id="solve">
+  <h2>풀이 단계</h2>
+  <p>세 모델이 모든 문제를 풉니다. 풀이 모델은 문제 진술과 유한판만 받고, 누가 낸 문제인지는 모릅니다. 인터넷과 계산 도구 없이 "혼자 일하는 연구 수학자"라는 짧은 지시만 받습니다. 답을 낼 때 스스로 "해결", "부분 해결", "미해결" 중 하나를 고릅니다.</p>
+  <p>계획서 2.2의 행렬이 바로 다음 표입니다. 가로줄은 문제를 낸 쪽, 세로줄은 푼 모델입니다. 짙은 칸은 자기가 낸 문제를 자기가 푼 경우입니다.</p>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>낸 쪽 / 푼 모델</th><th>Sonnet</th><th>Opus</th><th>Fable</th></tr></thead>
+    <tbody>
+<tr><th scope="row">Sonnet 문제 (8개)</th><td class="self">8/8</td><td>8/8</td><td>6/8</td></tr>
+<tr><th scope="row">Opus 문제 (7개)</th><td>7/7</td><td class="self">7/7</td><td>4/7</td></tr>
+<tr><th scope="row">Fable 문제 (7개)</th><td>7/7</td><td>7/7</td><td class="self">6/7</td></tr>
+<tr><th scope="row">사람 문제 (9개)</th><td>9/9</td><td>9/9</td><td>8/9</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">완료 칸 / 전체 칸입니다. 아래 예산 초과 2칸도 완료에 포함했습니다.</p>
+  <h3>모델이 스스로 답한 결과</h3>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>푼 모델</th><th>해결</th><th>부분 해결</th><th>미해결</th><th>예산 초과</th><th>합계</th></tr></thead>
+    <tbody>
+<tr><th scope="row">Sonnet</th><td>2</td><td>12</td><td>17</td><td>0</td><td>31</td></tr>
+<tr><th scope="row">Opus</th><td>0</td><td>15</td><td>16</td><td>0</td><td>31</td></tr>
+<tr><th scope="row">Fable</th><td>2</td><td>17</td><td>3</td><td>2</td><td>24</td></tr>
+    </tbody>
+  </table></div>
+  <p>"해결"은 모델의 자기 신고일 뿐입니다. 유한판이 있는 문제는 유한판만 풀어도 해결이라고 답할 수 있습니다.</p>
+  <h3>실행 규칙과 그 이유</h3>
+  <ul>
+    <li><strong>호출당 60분:</strong> 처음에는 30분이었는데 Fable이 자주 시간을 넘겨서 10월 29일에 모든 모델을 60분으로 늘렸습니다. 30분 규칙의 시간 초과 기록은 지우고 그 칸을 다시 풀었습니다.</li>
+    <li><strong>예산 규칙:</strong> 한 칸이 시간 초과나 출력 길이 초과로 2번 실패하면 더 시도하지 않고 파이프라인이 "미해결" 행을 씁니다. 끝없이 재시도하지 않기 위한 규칙입니다. 분석에서는 실패로 세고 평가자에게는 보이지 않습니다. 네트워크나 로그인 문제로 인한 실패는 세지 않습니다.</li>
+    <li><strong>실행 시기가 다릅니다:</strong> Sonnet 전부와 Opus 대부분은 10월 18~19일에 돌았습니다. Fable은 11칸만 그때 돌았고 나머지는 10월 29일 이후입니다. 사용 한도와 장애 때문입니다.</li>
+    <li><strong>출력 길이 상한이 다릅니다:</strong> Fable은 64k, Sonnet과 Opus는 128k입니다. 도구의 기본값이고 우리가 정하지 않았습니다. 한계로 보고합니다.</li>
+    <li><strong>호출 방식:</strong> 계획서의 API 대신 Max 플랜의 Claude Code CLI를 썼습니다. 모델 버전은 <code>claude-sonnet-5-5</code>, <code>claude-opus-5-5</code>, <code>claude-fable-5-1</code>입니다.</li>
+  </ul>
+</section>
+
+<section id="rate">
+  <h2>평가 단계와 척도</h2>
+  <p>평가자는 두 집단입니다. AI 평가자는 Sonnet, Opus, Fable이고, 사람 평가자는 계획서상 수학 대학원생과 교수 3~5명입니다. 두 집단이 같은 채점표를 씁니다. 그래야 "사람과 AI의 판단이 얼마나 일치하는가"를 비교할 수 있습니다. 파일은 <code>prompts/rubric.md</code> 하나입니다.</p>
+  <h3 id="scales">척도표</h3>
+  <p class="meta">항목 이름은 계획서에 있습니다. 1점, 3점, 5점의 기준 문장은 제가 썼습니다. 점수 항목에는 모두 "판단 불가"가 있습니다. 오른쪽 칸은 지금까지 Sonnet과 Opus가 준 점수의 분포입니다.</p>
+  <div class="scroll"><table class="wide">
+    <thead><tr><th>대상</th><th>항목</th><th>척도</th><th>기준</th><th>AI 응답 분포</th></tr></thead>
+    <tbody>
+    <tr><td>문제</td><td>명확성</td><td>1~5</td><td>1 = 뜻이 통하지 않거나 정의가 빠짐 · 3 = 뜻은 통하지만 모호한 부분이 있음 · 5 = 모든 기호와 조건이 정의되어 한 가지로만 읽힘</td><td>3점 6건 · 4점 27건 · 5점 29건</td></tr>
+    <tr><td>문제</td><td>난이도</td><td>1~5</td><td>1 = 학부 연습문제 수준 · 3 = 대학원생이 며칠 걸릴 수준 · 5 = 현재 알려진 방법으로는 접근이 보이지 않는 수준</td><td>4점 14건 · 5점 48건</td></tr>
+    <tr><td>문제</td><td>풍요로움</td><td>개수, 상한 없음</td><td>"이 문제가 풀리면 쉬워지거나 자연스럽게 따라오는 다른 문제"를 한 줄에 하나씩 적음. 없으면 0</td><td>최소 3개, 최대 10개</td></tr>
+    <tr><td>문제</td><td>풀고 싶은 정도</td><td>1~5</td><td>1 = 전혀 · 3 = 시간이 있으면 · 5 = 지금 바로 붙잡고 싶다</td><td>3점 17건 · 4점 41건 · 5점 4건</td></tr>
+    <tr><td>문제</td><td>이미 알려진 문제</td><td>예 / 아니오 / 판단 불가</td><td>이미 알려진 문제나 정리와 사실상 같으면 "예"</td><td>Sonnet: 예 9 · 아니오 22 · 판단 불가 0<br>Opus: 예 24 · 아니오 0 · 판단 불가 7</td></tr>
+    <tr><td>풀이</td><td>정확성</td><td>1~5</td><td>1 = 틀렸거나 핵심 단계가 없음 · 3 = 방향은 맞지만 빈틈이 있음 · 5 = 완전하고 올바름. 유한판이 있으면 유한판 기준</td><td>1점 133건 · 2점 21건 · 3점 5건 · 4점 2건 · 5점 7건</td></tr>
+    <tr><td>풀이</td><td>명료성</td><td>1~5</td><td>1 = 따라갈 수 없음 · 3 = 노력하면 따라갈 수 있음 · 5 = 한 번 읽고 따라갈 수 있음</td><td>2점 13건 · 3점 27건 · 4점 88건 · 5점 40건</td></tr>
+    <tr><td>풀이</td><td>이해 가능 여부</td><td>예 / 아니오 / 판단 불가</td><td>핵심 아이디어를 자기 말로 다시 설명할 수 있으면 "예"</td><td>사람의 응답이 핵심인 항목</td></tr>
+    <tr><td>사람만</td><td>출처 추측</td><td>사람 / AI 하위·중위·상위 / 모름</td><td>평가를 마친 뒤 각 문제와 풀이를 누가 만들었는지 추측. 건너뛸 수 있음</td><td>사람 평가 전</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>"사람의 지식 팽창에 유효한가"는 어떻게 재는가</h3>
+  <p>직접 묻지 않습니다. 대신 다음 항목들이 간접적으로 그 역할을 합니다.</p>
+  <ul>
+    <li><strong>풍요로움:</strong> 풀렸을 때 다른 문제를 얼마나 여는가를 봅니다. H-P2의 핵심 지표입니다.</li>
+    <li><strong>풀고 싶은 정도:</strong> 전문가가 연구할 동기를 느끼는지 봅니다.</li>
+    <li><strong>이해 가능 여부와 판단 불가율:</strong> 사람이 따라갈 수 있는지 봅니다. H-P4의 지표입니다.</li>
+    <li><strong>재설명과 파생 문제 만들기:</strong> 계획서 2.4의 이해 실험입니다. "다음 문제로 잇는가"에 가장 가까운 측정이지만, 지금은 실행 계획이 없습니다.</li>
+  </ul>
+  <p>이 항목들을 묶어 "유효하다"고 판정하는 기준선은 없습니다. 이 빈칸을 그대로 둘지는 설계자가 정할 일입니다.</p>
+
+  <h3>지금 척도에서 보이는 문제</h3>
+  <ul>
+    <li><strong>점수가 한쪽에 몰립니다.</strong> AI가 준 난이도는 4점과 5점뿐이고, 풀고 싶은 정도에는 3점 아래가 없습니다. 점수 폭이 좁으면 등급 차이가 잘 드러나지 않습니다.</li>
+    <li><strong>풍요로움은 개수만 잽니다.</strong> 적어 낸 항목이 좋은지는 확인하지 않습니다. AI는 쉽게 여러 줄을 쓰므로, 사람과 같은 숫자로 비교하면 위험할 수 있습니다. 사람 데이터가 없는 지금으로서는 우려 단계입니다.</li>
+    <li><strong>"이미 알려짐" 판단이 평가자의 성향을 따릅니다.</strong> Opus는 "아니오"를 한 번도 고르지 않았고, Sonnet은 대부분 "아니오"입니다.</li>
+    <li><strong>평가자가 지금 2명입니다.</strong> 자기 문제를 뺀 비교에서는 출제 모델의 차이와 평가자의 차이가 섞입니다. 그래서 자기 평가를 뺀 난이도의 p=0.035는 인용하면 안 됩니다.</li>
+  </ul>
+
+  <h3>블라인드: 사람 평가자에게 무엇을 보여 주나</h3>
+  <p>블라인드란 평가자가 출처를 모르게 하는 것입니다. AI가 낸 것을 알면 점수가 달라질 수 있기 때문입니다.</p>
+  <ul>
+    <li><strong>보여 주는 것:</strong> 문제 진술, 유한판, 풀이 본문, 제출된 답입니다. 풀이 순서는 평가자마다 다르게 섞입니다.</li>
+    <li><strong>숨기는 것:</strong> 낸 모델과 푼 모델, 모델이 적은 근거와 어려운 이유, 중요한 이유, 신규성 자신감, 체커입니다.</li>
+    <li><strong>중요한 이유를 숨긴 경위:</strong> 처음 설계에서는 보여 주기로 했습니다. 그런데 "이 문제가 풀리면 무엇이 따라오는가"를 모델이 미리 적어 둔 글이라 풍요로움 응답을 오염시킬 수 있어, 11월 4일 설계자 결정으로 숨겼습니다. AI 평가자에게도 똑같이 숨겼습니다.</li>
+  </ul>
+  <h3>사람 평가자의 부담</h3>
+  <p>지금 기준으로 문제 31개와 풀이 84개이고, 풀이만 약 2.8만 단어입니다. 한 사람이 전부 읽기는 어려워서 평가자마다 일부를 배정해야 합니다. 배정 방식은 섭외 인원이 정해진 뒤 설계하기로 하셨습니다. 평가 결과는 평가자가 페이지에서 파일로 내려받아 연구자에게 보내는 방식입니다.</p>
+</section>
+
+<section id="metrics">
+  <h2>무엇을 계산하고 무엇이 나왔나</h2>
+  <p>아래 숫자는 모두 잠정치입니다. AI 평가자 2명의 점수뿐이고 사람 점수는 없습니다.</p>
+
+  <h3>문제의 질 Q(G): P2</h3>
+  <p>문제를 낸 쪽별로 평가 점수의 평균을 냅니다. 계획서의 가설 H-P2는 "등급이 올라도 풍요로움은 유의하게 오르지 않는다"입니다.</p>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th></th><th>Sonnet</th><th>Opus</th><th>Fable</th><th>사람 대조군</th></tr></thead>
+    <tbody>
+    <tr><th scope="row">풍요로움</th><td>6.25</td><td>6.29</td><td>6.64</td><td>5.89</td></tr>
+    <tr><th scope="row">명확성</th><td>3.94</td><td>4.29</td><td>4.29</td><td>4.89</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>p=0.78의 뜻:</strong> 세 모델 사이에 실제 차이가 전혀 없다고 해도 이 정도 차이가 나타날 확률이 78%라는 뜻입니다. 곧 이 차이는 우연으로 충분히 설명됩니다. 다만 모델당 문제가 7~8개뿐이어서, 실제 차이가 있어도 잡아내지 못할 수 있습니다. "차이가 없다"는 증거로는 약합니다. 쓰인 검정은 계획서에 적힌 Kruskal–Wallis인데, 표본이 작을 때 쓰는 순위 비교 방법입니다.</p>
+
+  <h3>사다리와 천장: P3</h3>
+  <p>가설 H-P3는 "낸 모델 자신은 못 풀고 상위 모델은 푸는 문제가 있다"입니다.</p>
+  <ul>
+    <li><strong>사다리</strong>는 어떤 모델이 낸 문제를 상위 모델이 푼 비율에서 그 모델 자신이 푼 비율을 뺀 값입니다. 양수이면 상위 모델이 더 풉니다.</li>
+    <li><strong>천장</strong>은 상위 모델이 낸 문제를 하위 모델이 푼 비율입니다. 낮을수록 하위 모델이 따라가지 못한다는 뜻입니다.</li>
+  </ul>
+  <p>지금까지는 그런 문제가 없습니다. 체커를 통과한 것은 세 모델 모두 같은 문제 P-d6bfbe뿐입니다. open 문제 성공은 0건입니다. 남은 Fable 칸 가운데 5칸이 "낸 모델보다 상위인 모델이 푸는 칸"이라 결과가 바뀔 수 있습니다.</p>
+  <p><strong>해석의 한계:</strong> 이 결과는 도구 없는 60분 단일 호출에서 나온 것입니다. 준리만가설 사례처럼 에이전트가 수시간 일하는 조건과는 규모가 다르므로, 능력이 없다는 뜻으로 읽으면 안 됩니다.</p>
+  <p><strong>성공 기준:</strong> 체커가 있으면 통과 여부로 정합니다. 체커가 없으면 모델이 "해결"이라고 말하고, 자기 자신을 뺀 AI 평가자의 정확성 평균이 4점 이상이어야 합니다. 4점은 제가 정한 선입니다. 지금 코드는 이 판정에 <strong>사람 점수를 넣지 않습니다.</strong></p>
+
+  <h3>판단 불가율과 일치도: P4</h3>
+  <p>가설 H-P4는 "문제를 낸 모델의 등급이 오를수록 사람의 판단 불가 비율이 오르고, 사람과 AI 평가의 일치도는 떨어진다"입니다. 사람 평가가 없어서 지금은 전혀 측정할 수 없습니다.</p>
+  <ul>
+    <li><strong>판단 불가율:</strong> 사람 평가자가 "판단 불가"를 고른 비율입니다.</li>
+    <li><strong>사람–AI 일치도:</strong> 같은 대상에 준 사람 점수와 AI 점수가 함께 움직이는 정도입니다.</li>
+    <li><strong>사람 간 일치도:</strong> 사람 평가자들끼리 비슷하게 채점하는 정도입니다. 낮으면 사람도 기준이 흔들린다는 뜻입니다.</li>
+  </ul>
+
+  <h3>통제 장치</h3>
+  <ul>
+    <li><strong>자기편애:</strong> AI 평가자가 자기 모델의 산출물에 후한지 보려고, 자기 평가를 뺀 표를 함께 냅니다. 평가자에게 자기 것이라고 알려 주지는 않습니다.</li>
+    <li><strong>체커와 평가자 대조:</strong> 체커 결과가 있는 평가 28건에서 평가자 판단이 체커와 모두 일치했습니다. 통과 사례가 한 문제에서만 나와 강한 근거는 아닙니다.</li>
+    <li><strong>신규성:</strong> 평가자가 문헌상 가까운 21문제를 잘 가려냈는지 봅니다. Sonnet은 19개를 "알려지지 않음"이라 했고, Opus는 답한 생성 문제 15개를 전부 "알려짐"이라 했습니다. 어느 쪽도 가려냈다고 보기 어렵습니다.</li>
+    <li><strong>비용:</strong> 답을 낸 호출의 출력량 중앙값은 Sonnet 1,689, Opus 4,597, Fable 33,604토큰입니다. Fable이 Sonnet의 약 20배를 쓰지만 해결 주장은 2건씩 같습니다.</li>
+  </ul>
+</section>
+
+<section id="validity">
+  <h2>문제 성립 현황</h2>
+  <p>"문제가 성립한다"는 말에는 서로 다른 네 가지 확인이 섞여 있습니다. 각각 누가 어떻게 확인했는지가 다릅니다.</p>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>확인할 것</th><th>결과</th><th>누가, 어떻게</th></tr></thead>
+    <tbody>
+    <tr><td>유한판에 답이 존재할 수 있는가</td><td>checkable 9개 중 2개는 불가능. 제외</td><td>Opus가 검토했고, 제가 11월 6일 전수 탐색으로 다시 확인했습니다. 나머지 중 3개는 답이 있는지 아직 모릅니다.</td></tr>
+    <tr><td>체커가 유한판을 제대로 검사하는가</td><td>7개 승인</td><td>Opus가 따로 짠 코드와 비교했습니다. 설계서는 연구자 검토를 예정했지만, Opus 결과를 설계자가 승인하는 방식으로 진행했습니다.</td></tr>
+    <tr><td>정말 새로운 문제인가</td><td>유효 22개 중 21개는 같거나 가까운 질문이 문헌에 있음</td><td>서브에이전트가 문제당 2~3회 웹 검색했습니다. erdosproblems와 MathOverflow에는 접근하지 못했고, 15건은 판단이 들어간 "변형" 판정입니다. 전문가 검토 전입니다.</td></tr>
+    <tr><td>일반 문제가 수학적으로 말이 되는가</td><td><strong>사람이 확인한 적 없음</strong></td><td>AI 평가자의 명확성 점수만 있습니다. 사람 평가자가 첫 확인이 됩니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>2문제를 제외한 이유</h3>
+  <p>P-fdf0ff와 P-2e0477은 시돈 집합의 수 세 개를 더해 0부터 900까지, 또는 0부터 115까지 빈틈없이 만들라고 요구합니다. 그런데 어떤 시돈 집합으로도 빈틈없이 만들 수 있는 범위는 0부터 72까지입니다. 예를 들어 {0, 1, 3, 8, 12, 22, 28, 46, 59}가 72까지 만듭니다. 답이 없는 퍼즐인 셈입니다. 그대로 두면 "불가능하다"고 바르게 답한 풀이도 체커에서 실패로 찍힙니다.</p>
+  <p class="meta">제외 범위는 도중에 넓어졌습니다. 10월 29일에는 "기계 검증에서만 제외하고 평가자 채점에는 남긴다"고 설명드렸습니다. 11월 3일 수정에서 평가까지 모든 단계에서 빠졌습니다. 승인하신 수정 목록에 있었지만, 이 차이를 짚어 드리지는 않았습니다.</p>
+  <p><strong>결과에 미치는 영향:</strong> 빠진 2개는 Opus와 Fable의 문제이고 Sonnet의 문제는 빠지지 않았습니다. 잘못 낸 문제를 평균에서 빼면 상위 모델의 점수가 유리해집니다. 지금 분석에는 "성립률"이라는 지표가 없어서 이 사실이 숫자에 드러나지 않습니다.</p>
+
+  <h3>모델이 낸 24문제 전체</h3>
+  <p class="meta">표가 넓어서 옆으로 밀어 볼 수 있습니다. "같은 미해결 질문이 이미 있음"은 문제가 아직 열려 있지만 AI가 새로 낸 것은 아니라는 뜻입니다. 신규성 자신감은 모델이 스스로 적은 값으로, 1에 가까울수록 새로운 문제라고 믿는다는 뜻입니다.</p>
+  <div class="scroll"><table class="xwide">
+    <thead><tr><th>이름</th><th>출제</th><th>종류</th><th>초점 주제</th><th>문헌 대조</th><th>신규성 자신감</th><th>이미 알려짐? (Sonnet / Opus)</th><th>성립 상태</th></tr></thead>
+    <tbody>
+<tr><td class="m">P-e7ee71</td><td>Sonnet</td><td>open</td><td>등차수열 없는 집합의 크기</td><td><span class="chip w">같은 미해결 질문이 이미 있음</span></td><td class="m">0.85</td><td>예 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-0ec34a</td><td>Opus</td><td>open</td><td>등차수열 없는 집합의 크기</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.50</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-afca8b</td><td>Fable</td><td>open</td><td>등차수열 없는 집합의 크기</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.55</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-233237</td><td>Sonnet</td><td>open</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 판단 불가</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-4c5a9d</td><td>Opus</td><td>open</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip g">찾지 못함</span></td><td class="m">0.60</td><td>예 / 판단 불가</td><td><span class="chip g">문헌에서 같은 질문을 찾지 못한 유일한 유효 문제. 수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-2f9387</td><td>Fable</td><td>open</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 판단 불가</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-8dc27b</td><td>Sonnet</td><td>open</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-b38cfb</td><td>Opus</td><td>open</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 판단 불가</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-288130</td><td>Fable</td><td>open</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.70</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-9b2893</td><td>Sonnet</td><td>open</td><td>완전 차집합으로 확장 안 되는 시돈 집합</td><td><span class="chip w">같은 미해결 질문이 이미 있음</span></td><td class="m">0.50</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-a7cbb0</td><td>Opus</td><td>open</td><td>완전 차집합으로 확장 안 되는 시돈 집합</td><td><span class="chip w">같은 미해결 질문이 이미 있음</span></td><td class="m">0.40</td><td>아니오 / 판단 불가</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-b1424c</td><td>Fable</td><td>open</td><td>완전 차집합으로 확장 안 되는 시돈 집합</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.70</td><td>아니오 / 판단 불가</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-158772</td><td>Sonnet</td><td>open</td><td>2중 합 기저의 세 성질</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.55</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-be760c</td><td>Opus</td><td>open</td><td>2중 합 기저의 세 성질</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.55</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-aa712e</td><td>Fable</td><td>open</td><td>2중 합 기저의 세 성질</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 예</td><td><span class="chip g">수학적 성립은 사람이 확인하지 않음</span></td></tr>
+<tr><td class="m">P-d6bfbe</td><td>Sonnet</td><td>checkable</td><td>등차수열 없는 집합의 크기</td><td><span class="chip w">같은 미해결 질문이 이미 있음</span></td><td class="m">0.93</td><td>예 / 예</td><td><span class="chip w">유한판은 쉬움. 세 모델의 후보가 모두 체커 통과. 일반 문제는 열려 있음</span></td></tr>
+<tr><td class="m">P-fd59f2</td><td>Opus</td><td>checkable</td><td>등차수열 없는 집합의 크기</td><td><span class="chip w">같은 미해결 질문이 이미 있음</span></td><td class="m">0.85</td><td>아니오 / 예</td><td><span class="chip g">유한판 어려움. 지금까지 두 모델이 체커 실패</span></td></tr>
+<tr><td class="m">P-65e58b</td><td>Fable</td><td>checkable</td><td>등차수열 없는 집합의 크기</td><td><span class="chip b">이미 풀림</span></td><td class="m">0.60</td><td>아니오 / 예</td><td><span class="chip b">전제 오류. 문제가 '개선된 적 없다'고 한 상수는 2024년 논문이 이미 개선함. 유지 중</span></td></tr>
+<tr><td class="m">P-5d88c3</td><td>Sonnet</td><td>checkable</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 예</td><td><span class="chip w">유한판은 쉬움. 검토자가 1초 탐색으로 답을 찾음. 지금까지 두 모델은 체커 실패</span></td></tr>
+<tr><td class="m">P-fdf0ff</td><td>Opus</td><td>checkable</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip g">찾지 못함</span></td><td class="m">0.60</td><td>평가 안 함</td><td><span class="chip b">제외. 유한판에 답이 없음</span></td></tr>
+<tr><td class="m">P-2e0477</td><td>Fable</td><td>checkable</td><td>시돈 집합과 3중 합 기저</td><td><span class="chip g">찾지 못함</span></td><td class="m">0.70</td><td>평가 안 함</td><td><span class="chip b">제외. 유한판에 답이 없음</span></td></tr>
+<tr><td class="m">P-e1102e</td><td>Sonnet</td><td>checkable</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.80</td><td>아니오 / 예</td><td><span class="chip g">유한판에 답이 있는지 미확인</span></td></tr>
+<tr><td class="m">P-09b1eb</td><td>Opus</td><td>checkable</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 예</td><td><span class="chip g">유한판에 답이 있는지 미확인</span></td></tr>
+<tr><td class="m">P-cbca09</td><td>Fable</td><td>checkable</td><td>명시적 저밀도 기저</td><td><span class="chip w">가까운 변형이 이미 있음</span></td><td class="m">0.60</td><td>아니오 / 판단 불가</td><td><span class="chip g">유한판에 답이 있는지 미확인</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="high">
+  <h2>고컨텍스트 조건</h2>
+  <p><strong>무엇을 하려는 것인가:</strong> 지금 실험의 컨텍스트는 약 1,560단어로 얇습니다. 그래서 등급 차이가 안 보여도 그것이 모델 능력 때문인지 자료가 부족해서인지 가릴 수 없습니다. 최신 논문을 충분히 넣고 소규모로 한 번 더 돌려 비교하자는 것이 이 조건입니다. 설계자는 이것을 "high컨텍스트 대조군"이라고 부르셨습니다. 제가 설계서에 "대조군이 아니라 두 번째 조건"으로 적었는데, 여쭙지 않고 바꾼 표현입니다. 이 문서에서는 사람 Erdős 문제와 헷갈리지 않도록 "고컨텍스트 조건"이라고 씁니다.</p>
+
+  <h3>실제로 일어난 일</h3>
+  <div class="scroll"><table class="mid">
+    <thead><tr><th>시점</th><th>내용</th></tr></thead>
+    <tbody>
+    <tr><td>11-03</td><td>설계자: 실험을 끝까지 돌리고, 컨텍스트를 충분히 넣은 조건을 "소규모로 한번 더할거라고 추가하자", "넣어". 저는 "팩은 본 실험이 끝나는 시점에 만들겠다"고 답했습니다.</td></tr>
+    <tr><td>11-04</td><td>Fable 한도가 소진되자 설계자가 Fable을 뺀 빠른 진행 방안을 물으셨습니다. 제가 답한 표에 "고컨텍스트 조건 (Sonnet·Opus 문제 4개 생성, 평가)"을 한 줄로 넣었습니다.</td></tr>
+    <tr><td>11-04</td><td>설계자의 "숨기고 시작"을 전체 승인으로 받아, 서브에이전트가 쓴 약 6,800단어 팩으로 Sonnet과 Opus를 실행했습니다. <strong>논문을 누가 고르고 넣을지 여쭙지 않았습니다.</strong></td></tr>
+    <tr><td>11-06</td><td>설계자: 나중에 논문 컨텍스트를 직접 넣고 돌릴 계획이었다고 알려 주셨습니다. 11월 7일 예약에서 이 조건의 Fable 실행을 뺐습니다.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>지금 남아 있는 것</h3>
+  <ul>
+    <li><strong>팩:</strong> <code>context/additive_comb_high.md</code>. 제가 맡긴 서브에이전트가 고른 자료이고 설계자가 검토하지 않았습니다.</li>
+    <li><strong>문제 4개와 평가 8건:</strong> <code>high_ctx/data</code> 폴더에 있습니다. Sonnet 2개와 Opus 2개이고 Fable은 없습니다. 지우지 않았습니다.</li>
+    <li><strong>본 실험과의 관계:</strong> 별도 폴더라 본 실험의 풀이, 평가, 사람 평가 페이지, 기본 분석에 섞이지 않습니다.</li>
+    <li><strong>이미 적어 둔 곳:</strong> 설계서 16절과 README에 이 조건의 설계가 제 안대로 적혀 있고, 발표 덱의 다음 단계 슬라이드에는 "Sonnet·Opus 몫은 끝났다"고 적혀 있습니다. 결정을 받은 뒤 고칩니다.</li>
+  </ul>
+
+  <h3>논문을 주실 때 진행 방법</h3>
+  <ol>
+    <li>넣을 논문이나 파일을 주시면 그 내용으로만 팩을 새로 만들어, 실행 전에 보여 드립니다.</li>
+    <li>승인하시면 새 폴더에서 세 모델을 같은 프롬프트로 실행합니다. 기존 4문제와 섞이지 않습니다.</li>
+    <li>문제 수, 풀이까지 할지, 사람 평가에 넣을지는 실행 전에 함께 정합니다.</li>
+  </ol>
+  <p>기존 4문제와 평가 8건을 어떻게 할지도 정해 주셔야 합니다. 저는 분석에 쓰지 않고 시험 실행 기록으로만 남기는 것을 추천합니다. 설계자가 고른 자료로 만든 결과가 아니고, Fable 몫도 없기 때문입니다.</p>
+</section>
+
+<section id="decisions">
+  <h2>결정 기록</h2>
+  <p>저장소 이력과 대화 기록으로 확인한 내용입니다. 세 가지로 나눴습니다. <span class="chip k">설계자 결정</span>은 직접 정하거나 그 건을 보고 승인하신 것입니다. <span class="chip w">제 제안</span>은 제가 제안해서 전체 설계 승인에 묶여 통과한 것입니다. <span class="chip b">제가 정함</span>은 따로 여쭙지 않은 것입니다.</p>
+  <div class="scroll"><table class="wide">
+    <thead><tr><th>날짜</th><th>내용</th><th>누가 정했나</th></tr></thead>
+    <tbody>
+    <tr><td>10-17</td><td>CLI 호출, 웹 평가 페이지, 가법 조합론 분야</td><td><span class="chip k">설계자 결정</span> 제 추천을 선택지로 받아 승인</td></tr>
+    <tr><td>10-17</td><td>open과 checkable 두 종류로 나누기</td><td><span class="chip w">제 제안</span></td></tr>
+    <tr><td>10-17</td><td>채점표의 1, 3, 5점 기준 문장과 성공 기준 4점</td><td><span class="chip w">제 제안</span> 하나씩 설명하지 않음</td></tr>
+    <tr><td>10-17</td><td>Lean 4와 이해 실험을 도구 범위에서 빼기</td><td><span class="chip w">제 제안</span></td></tr>
+    <tr><td>10-18</td><td>컨텍스트 결과 9개, 대조군 9개의 선정과 진술</td><td><span class="chip b">제가 정함</span> 연구자 검토를 예정했으나 검토한 기록이 없음</td></tr>
+    <tr><td>10-18</td><td>open 5 + checkable 3, 초점 배정 방식</td><td><span class="chip b">제가 정함</span> 비율을 여쭙지 않음. 뒤의 4개 절이 안 쓰인다는 점도 말씀드리지 않음</td></tr>
+    <tr><td>10-18</td><td>전체 생성과 전체 풀이 실행, 데모 결과를 데이터에 포함</td><td><span class="chip k">설계자 결정</span></td></tr>
+    <tr><td>10-18</td><td>평가 전에 풀이부터 실행</td><td><span class="chip b">제가 정함</span> 계획서 2.7과 다르다고 말씀드리지 않음</td></tr>
+    <tr><td>10-18</td><td>시간 초과 2번이면 미해결로 기록</td><td><span class="chip k">설계자 결정</span></td></tr>
+    <tr><td>10-29</td><td>체커 7개 승인, 2개 제외</td><td><span class="chip k">설계자 결정</span> Opus 검토 결과를 보고 승인</td></tr>
+    <tr><td>10-29</td><td>모든 모델 60분, 30분 규칙 기록 삭제</td><td><span class="chip k">설계자 결정</span> 처음에 Fable만 말씀하셨고 제 추천을 받아들이심</td></tr>
+    <tr><td>10-29</td><td>출력 길이 초과도 예산 소진으로 계산</td><td><span class="chip b">제가 정함</span></td></tr>
+    <tr><td>11-03</td><td>무결성 수정: 제외 목록 통일, 풀이 순서, 자기 평가 제외 표 등</td><td><span class="chip k">설계자 결정</span> 목록을 보고 "실험 목적에 맞는 것들만"</td></tr>
+    <tr><td>11-03</td><td>시간 1800초, 예산 1회, 추론 노력 고정은 적용 안 함</td><td><span class="chip k">설계자 결정</span> 같은 기준에 따라</td></tr>
+    <tr><td>11-03</td><td>고컨텍스트 조건을 소규모로 추가한다는 방향</td><td><span class="chip k">설계자 결정</span></td></tr>
+    <tr><td>11-03</td><td>"대조군"을 "두 번째 조건"으로 표현, 모델당 open 2개</td><td><span class="chip b">제가 정함</span></td></tr>
+    <tr><td>11-04</td><td>Fable 빼고 먼저 실행, 중요한 이유 숨기기</td><td><span class="chip k">설계자 결정</span></td></tr>
+    <tr><td>11-04</td><td>고컨텍스트 팩 작성과 Sonnet·Opus 실행</td><td><span class="chip b">제가 정함</span> 방안 표에 한 줄로 넣고 승인으로 받음. 설계자 의도와 달랐음</td></tr>
+    <tr><td>11-04</td><td>고컨텍스트 문제를 별도 폴더에서 평가</td><td><span class="chip b">제가 정함</span> 설계서 16절의 "섞어서 제시"와 다름</td></tr>
+    <tr><td>11-04</td><td>문헌 대조를 서브에이전트에게 맡김</td><td><span class="chip b">제가 정함</span> 설계서는 문제당 Sonnet 호출 1회였음</td></tr>
+    <tr><td>11-04</td><td>풀이 배정 설계를 섭외 뒤로 미룸</td><td><span class="chip k">설계자 결정</span></td></tr>
+    <tr><td>11-06</td><td>11월 7일 예약에서 고컨텍스트 실행을 뺌</td><td><span class="chip k">설계자 결정</span> 말씀에 따라 제가 수정</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="diff">
+  <h2>계획서와 달라진 점</h2>
+  <h3>아직 하지 않은 것</h3>
+  <ul>
+    <li><strong>P1 벤치마크 분석 (2.1):</strong> 이 저장소에는 기록이 없습니다. 따로 하셨는지는 제가 알 수 없습니다.</li>
+    <li><strong>사람 평가 (2.2):</strong> 3~5명 섭외가 남아 있습니다. 평가 페이지는 만들어져 있습니다.</li>
+    <li><strong>이해 실험 (2.4):</strong> 학부 수학 전공 참가자가 풀이를 자기 말로 다시 설명하고 파생 문제를 만드는 실험입니다. 도구도 일정도 없습니다.</li>
+    <li><strong>질적 분석 (2.4):</strong> 수학자들의 공개 반응을 분류하는 작업입니다. 이 저장소에 기록이 없습니다.</li>
+    <li><strong>규범 분석 (2.6):</strong> 연구 목적 2에 해당하며 P4 데이터가 필요합니다.</li>
+  </ul>
+  <h3>다르게 진행한 것</h3>
+  <ul>
+    <li><strong>순서:</strong> 계획서 2.7은 문제를 낸 뒤 문제의 질을 먼저 평가해서, 등급 차이가 없으면 이후 단계를 조정하라고 합니다. 실제로는 풀이를 먼저 돌려서 그 판단 시점이 없었습니다.</li>
+    <li><strong>호출 방식:</strong> API 대신 Max 플랜의 CLI를 썼습니다. 무작위성 설정을 고정할 수 없고, 사용 한도 때문에 실행 시기가 벌어졌습니다.</li>
+    <li><strong>기계 검증:</strong> 파이썬 체커만 있고 Lean 4는 없습니다.</li>
+    <li><strong>타사 모델:</strong> 추가하지 않았고, 계획서대로 한계로 적습니다.</li>
+    <li><strong>일정:</strong> 10월 19일까지 문제 생성은 지켰지만 풀이와 평가가 11월까지 이어졌습니다.</li>
+  </ul>
+  <h3>추가한 것</h3>
+  <ul>
+    <li><strong>고컨텍스트 조건:</strong> 위 절의 내용입니다.</li>
+    <li><strong>문헌 대조:</strong> 평가자의 "이미 알려짐" 표시를 외부 근거와 비교하려고 추가했습니다.</li>
+    <li><strong>예산 규칙과 제외 규칙:</strong> 실행 중 생긴 문제에 대응한 것이며 <code>README.md</code>의 실험 기록에 있습니다.</li>
+  </ul>
+</section>
+
+<section id="todo">
+  <h2>지금 정해야 할 것</h2>
+  <p>제 추천을 함께 적었지만 모두 설계자가 정할 일입니다. 답을 받기 전에는 바꾸지 않습니다. 첫 줄만 시한이 있어서, 답이 없으면 지금 예약대로 진행됩니다.</p>
+  <div class="scroll"><table class="wide">
+    <thead><tr><th>시한</th><th>정할 것</th><th>왜 중요한가</th><th>제 추천</th></tr></thead>
+    <tbody>
+    <tr><td><strong>11-07 07:03 전</strong></td><td>예약 실행에서 Fable 평가까지 돌릴지</td><td>채점표를 바꾸면 평가를 다시 해야 하고, Fable 사용 한도는 빠듯합니다.</td><td>풀이까지만 돌리고, 평가는 아래 결정 뒤로 미루기</td></tr>
+    <tr><td>Fable 평가 전</td><td>"지식 팽창에 유효한가"를 직접 묻는 문항을 넣을지</td><td>지금은 대리 지표뿐입니다. 사람 평가 전이라 지금이 추가할 수 있는 마지막 때입니다.</td><td>기존 항목은 그대로 두고 사람용 문항 1개만 추가. 기존 AI 점수와의 비교가 유지됩니다.</td></tr>
+    <tr><td>논문을 주실 때</td><td>고컨텍스트 조건: 넣을 논문, 문제 수, 풀이 여부, 사람 평가 포함 여부</td><td>설계자가 직접 정하려던 내용입니다.</td><td>팩을 먼저 보여 드리고 승인 뒤 실행</td></tr>
+    <tr><td>편하실 때</td><td>기존 고컨텍스트 4문제와 평가 8건의 처리</td><td>의도와 다르게 실행된 데이터입니다.</td><td>분석에 쓰지 않고 시험 실행 기록으로만 보관</td></tr>
+    <tr><td>분석 전</td><td>제외한 2문제를 어떻게 보고할지</td><td>빼면 상위 모델이 유리해집니다.</td><td>모델별 성립률을 지표로 추가하고, 포함과 제외 두 가지로 보고</td></tr>
+    <tr><td>분석 전</td><td>성공 판정에 사람 점수를 넣을지</td><td>지금은 AI 점수만 씁니다.</td><td>AI 기준과 사람 기준을 나눠 둘 다 보고</td></tr>
+    <tr><td>사람 평가 전</td><td>컨텍스트 팩과 대조군 9개를 직접 검토</td><td>연구자 검토 기록이 없습니다. 팩을 고치면 생성을 처음부터 다시 해야 합니다.</td><td>내용은 고치지 않고 읽어 본 뒤, 검토가 사후였음을 한계로 기록</td></tr>
+    <tr><td>섭외 후</td><td>평가자 자격과 풀이 배정</td><td>1인 2.8만 단어는 현실적이지 않습니다.</td><td>섭외 인원에 맞춰 설계</td></tr>
+    <tr><td>이번 달</td><td>P1, 이해 실험, 질적 분석을 할지, 누가 할지</td><td>P4와 연구 목적 2의 근거입니다. 계획서 일정은 11월 21일까지입니다.</td><td>이해 실험은 규모를 줄여서라도 유지. "다음 문제로 잇는가"를 직접 재는 유일한 절차입니다.</td></tr>
+    </tbody>
+  </table></div>
+  <p class="meta">관련 페이지: <a href="https://claude.ai/artifact/QZY7rpoztRNqAjRHYxqBkP">실험 인계</a> · <a href="https://claude.ai/artifact/9a5Wtha3zQ7FLprtcsHA9X">진행판</a> · <a href="https://claude.ai/artifact/Nbwn3D74nfueHyoEuBcJii">중간발표 덱</a></p>
+</section>
+</main>
