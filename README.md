@@ -38,7 +38,7 @@ python run.py eval
 - 생성된 검증형 문제 P-fdf0ff, P-2e0477은 유한 사례가 증명상 불가능해 제외했다(`pipeline.EXCLUDED_PROBLEMS`). 자동 생성 검증형 문제에 대한 발견으로 보고한다.
 - 2026-11-04에 결정: AI·인간 평가자 모두에게 `why_important`를 보여주지 않는다(평가 시작 전 적용, 풍요로움 항목 오염 방지). 필드는 데이터에 그대로 둔다.
 - 같은 칸을 다시 시도하면 이전 원본은 `raw/<단계>/<id>_<모델>.attemptN.json`으로 보존한다.
-- 2026-11-04 방향 추가: 기존 실행을 저컨텍스트 조건으로 두고, 최신 논문·Erdős 진전을 넣은 고컨텍스트 조건에서 모델당 open 2개를 다시 생성해 P2 평가만 소규모로 한 번 더 한다(스펙 §16). 준리만가설 사례(사람이 고른 문제, 도구·수시간 에이전트)와 우리 체제(도구 없는 60분 단일 호출)의 차이는 한계로 보고한다.
+- 2026-11-04 방향 추가: 기존 실행을 저컨텍스트 조건으로 두고, 최신 논문·Erdős 진전을 넣은 고컨텍스트 조건에서 모델당 open 2개를 다시 생성해 P2 평가만 소규모로 한 번 더 한다(스펙 §16). 2026-11-06 개정: 사용자가 별도 세션에서 고른 세 줄기 독립 팩(`context/additive_comb_high_v2.md`)으로 모델당 open 3개를 생성하고 풀이까지 하며, 데이터는 `high_ctx2/data`에 둔다. 준리만가설 사례(사람이 고른 문제, 도구·수시간 에이전트)와 우리 체제(도구 없는 60분 단일 호출)의 차이는 한계로 보고한다.
 
 ## 3. 기계 검증
 `checkers/P-xxxxxx.py`를 열어 읽고, 맞으면 첫 줄을 `# REVIEWED`로 바꾼다. 그 뒤:
@@ -52,7 +52,7 @@ python run.py verify
 python run.py export-human --raters R1,R2,R3
 ```
 → `eval_page/index.html`을 Artifact로 게시(또는 파일을 그대로 전달). 평가자는 코드를 입력해 평가하고 마지막에 `ratings_R1.json`을 내려받아 보낸다.
-배포 전에 export를 고정한다: `export-human`을 다시 돌리면 `generated_at`이 바뀌어 평가자의 진행 상태가 처음으로 돌아간다. 평가 중에는 다시 내보내지 않는다.
+고컨텍스트 조건 문제를 섞어 함께 내보낼 때는 `--extra-data-dir high_ctx2/data`를 붙인다. 문제 출처 폴더는 평가 페이지에 들어가지 않는 `data/blind_sources.json`에만 적히고, `import-human`이 평가를 각 폴더로 되돌린다. 배포 전에 export를 고정한다: `export-human`을 다시 돌리면 `generated_at`이 바뀌어 평가자의 진행 상태가 처음으로 돌아간다. 평가 중에는 다시 내보내지 않는다.
 ```bash
 python run.py import-human ratings_R1.json
 ```

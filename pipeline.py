@@ -262,15 +262,19 @@ def verify(data_dir: Path, timeout: int = 60) -> int:
     return made
 
 
-def export_human(data_dir: Path, raters: list[str]) -> Path:
-    check_one_row_per_cell(data_dir)
-    problems = all_problems(data_dir)
+def export_human(data_dir: Path, raters: list[str], extra_dirs: list[Path] = ()) -> Path:
+    """extra_dirs (e.g. the high-context data folder) are mixed into the same blind export; the folder of each target
+    goes to blind_sources.json, which import-human uses to route ratings and which the rating page never sees."""
+    dirs = [data_dir, *extra_dirs]
+    for d in dirs:
+        check_one_row_per_cell(d)
+    problems = [p for d in dirs for p in all_problems(d)] if extra_dirs else all_problems(data_dir)
     ids = [p["id"] for p in problems]
     bad = [i for i in ids if not re.fullmatch(r"P-[0-9a-f]{6}", str(i))]
     if bad or len(set(ids)) != len(ids):
         raise SystemExit(f"export-human refused: problem ids must be unique and look like P-xxxxxx (6 hex); offending: {bad or 'duplicates'}. "
                          "Generate ids with: python -c \"from store import new_id; print(new_id('P'))\"")
-    sols_all = read_jsonl(data_dir / "solutions.jsonl")
+    sols_all = [s for d in dirs for s in read_jsonl(d / "solutions.jsonl")]
     if len(set(s["id"] for s in sols_all)) != len(sols_all):
         raise SystemExit("export-human refused: duplicate solution ids")
     bad_s = [s["id"] for s in sols_all if not re.fullmatch(r"S-[0-9a-f]{6}", str(s["id"]))]
@@ -291,6 +295,13 @@ def export_human(data_dir: Path, raters: list[str]) -> Path:
     out = data_dir / "blind.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(blind, ensure_ascii=False, indent=1), encoding="utf-8")
+    src_path = data_dir / "blind_sources.json"
+    if extra_dirs:
+        owner = {p["id"]: d for d in dirs for p in all_problems(d)}  # controls come from data_dir's parent, so data_dir owns them
+        owner |= {s["id"]: d for d in dirs for s in read_jsonl(d / "solutions.jsonl")}
+        src_path.write_text(json.dumps({i: str(d.resolve()) for i, d in owner.items()}, indent=1), encoding="utf-8")
+    elif src_path.exists():
+        src_path.unlink()
     tpl = data_dir.parent / "eval_page" / "template.html"
     if tpl.exists():
         payload = json.dumps(blind, ensure_ascii=False).replace("<", "\\u003c")
@@ -345,12 +356,17 @@ def import_human(data_dir: Path, path: Path) -> int:
         if row["target_id"] not in known:
             print(f"warning: target_id {row['target_id']!r} is not in blind.json (stale export?); row kept")
         clean[(row["rater"], row["target_type"], row["target_id"])] = row
-    keys = set(clean)
-    clean = list(clean.values())
-    ratings_path = data_dir / "ratings.jsonl"
-    old = read_jsonl(ratings_path)
-    replaced = len(keys & {(e["rater"], e["target_type"], e["target_id"]) for e in old if e["rater_type"] == "human"})
-    kept = [e for e in old if not (e["rater_type"] == "human" and (e["rater"], e["target_type"], e["target_id"]) in keys)]
-    write_jsonl(ratings_path, kept + clean)
+    src_path = data_dir / "blind_sources.json"
+    owner = {i: Path(d) for i, d in json.loads(src_path.read_text(encoding="utf-8")).items()} if src_path.exists() else {}
+    by_dir: dict[Path, dict] = {}
+    for k, row in clean.items():  # each rating goes to the folder that owns its target (export-human --extra-data-dir)
+        by_dir.setdefault(owner.get(row["target_id"], data_dir), {})[k] = row
+    replaced = 0
+    for d, part in by_dir.items():
+        ratings_path = d / "ratings.jsonl"
+        old = read_jsonl(ratings_path)
+        replaced += len(set(part) & {(e["rater"], e["target_type"], e["target_id"]) for e in old if e["rater_type"] == "human"})
+        kept = [e for e in old if not (e["rater_type"] == "human" and (e["rater"], e["target_type"], e["target_id"]) in part)]
+        write_jsonl(ratings_path, kept + list(part.values()))
     print(f"import-human: {len(clean) - replaced} new, {replaced} replaced")
     return len(clean)

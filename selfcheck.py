@@ -533,8 +533,30 @@ def check_analyze(tmp: Path, data: Path) -> None:
     assert kr[kr.rater_type == "ai"]["n_problems"].eq(9).all(), kr
 
 
+def check_mixed_export(tmp: Path, data: Path) -> None:
+    import pipeline
+    d3, d4 = tmp / "budget" / "data", tmp / "mixed_high" / "data"  # d3 comes from check_time_budget
+    p = dict(read_jsonl(d3 / "problems.jsonl")[0], id="P-4a1c3e", gen_key="y:open:sonnet:0", statement="[fake sonnet] high-context test")
+    append_jsonl(d4 / "problems.jsonl", p)
+    assert pipeline.solve(d4, models=["sonnet"], dry_run=True) == 1
+    blind_path = pipeline.export_human(d3, ["R1"], [d4])
+    blind = json.loads(blind_path.read_text(encoding="utf-8"))
+    assert {q["id"] for q in blind["problems"]} == {"P-b0d9e7", "P-4a1c3e"}, "both folders in one export"
+    assert str(d4) not in blind_path.read_text(encoding="utf-8"), "the rating page must not see which folder a problem came from"
+    s4 = read_jsonl(d4 / "solutions.jsonl")[0]["id"]
+    sub = tmp / "mixed_ratings.json"
+    sub.write_text(json.dumps([{"rater": "R1", "target_type": "problem", "target_id": i, "clarity": 3} for i in ("P-b0d9e7", "P-4a1c3e")]
+                              + [{"rater": "R1", "target_type": "solution", "target_id": s4, "correctness": 2}]), encoding="utf-8")
+    assert pipeline.import_human(d3, sub) == 3
+    hum = lambda d: {r["target_id"] for r in read_jsonl(d / "ratings.jsonl") if r["rater_type"] == "human"}
+    assert hum(d3) == {"P-b0d9e7"} and hum(d4) == {"P-4a1c3e", s4}, "each rating goes to the folder that owns its target"
+    assert pipeline.import_human(d3, sub) == 3 and len(hum(d4)) == 2, "re-import replaces, never duplicates"
+    pipeline.export_human(d3, ["R1"])
+    assert not (d3 / "blind_sources.json").exists(), "a plain export drops a stale routing file"
+
+
 CHECKS = [check_store, check_llm_dry, check_llm_errors, check_cli_offline, check_prompts, check_gen, check_solve,
-          check_time_budget, check_eval, check_verify, check_verify_errors, check_roundtrip, check_analyze]
+          check_time_budget, check_mixed_export, check_eval, check_verify, check_verify_errors, check_roundtrip, check_analyze]
 
 
 def main() -> None:

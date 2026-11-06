@@ -53,6 +53,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("eval", help="AI raters score every problem and solution, one item per call")
     sub.add_parser("verify", help="run REVIEWED checkers on submitted candidates")
     e = sub.add_parser("export-human", help="write data/blind.json (+ eval_page/index.html if template exists)")
+    e.add_argument("--extra-data-dir", type=Path, action="append", default=[],
+                   help="also mix this data folder (e.g. the high-context one) into the same blind export")
     e.add_argument("--raters", default="R1,R2,R3,R4,R5", help="allowed evaluator codes")
     i = sub.add_parser("import-human", help="merge a JSON file downloaded from the evaluation page")
     i.add_argument("file", type=Path)
@@ -85,7 +87,7 @@ def main(argv=None) -> None:
         elif a.cmd == "verify":
             report(a, pipeline.verify(a.data_dir))
         elif a.cmd == "export-human":
-            print(pipeline.export_human(a.data_dir, [r.strip() for r in a.raters.split(",") if r.strip()]))
+            print(pipeline.export_human(a.data_dir, [r.strip() for r in a.raters.split(",") if r.strip()], a.extra_data_dir))
         elif a.cmd == "import-human":
             report(a, pipeline.import_human(a.data_dir, a.file))
         elif a.cmd == "probe":
