@@ -1,0 +1,136 @@
+{
+ "model": "opus",
+ "system": "You are a research mathematician working alone, with no tools and no internet access. Answer only in the requested JSON format. Write mathematics in English, using LaTeX ($...$) for formulas.",
+ "prompt": "Return ok=true, model_name=the model you are, saw_other_instructions=true if you received any instructions, personas, skills or project notes besides the short system prompt and this message, and summarize them in other_instructions_summary (empty string if none).",
+ "schema": {
+  "type": "object",
+  "properties": {
+   "ok": {
+    "type": "boolean"
+   },
+   "model_name": {
+    "type": "string"
+   },
+   "saw_other_instructions": {
+    "type": "boolean"
+   },
+   "other_instructions_summary": {
+    "type": "string"
+   }
+  },
+  "required": [
+   "ok",
+   "model_name",
+   "saw_other_instructions",
+   "other_instructions_summary"
+  ]
+ },
+ "started_at": "2026-10-18T03:21:33+00:00",
+ "finished_at": "2026-10-18T03:21:43+00:00",
+ "cli_version": "2.1.302 (Claude Code)",
+ "cli_output": {
+  "duration_api_ms": 7111,
+  "stop_reason": "tool_use",
+  "session_id": "cc71cfdc-c208-49ec-ba9d-ac3122faca6f",
+  "total_cost_usd": 0.02488,
+  "usage": {
+   "input_tokens": 2,
+   "cache_creation_input_tokens": 1584,
+   "cache_read_input_tokens": 0,
+   "output_tokens": 610,
+   "output_tokens_details": {
+    "thinking_tokens": 174
+   },
+   "server_tool_use": {
+    "web_search_requests": 0,
+    "web_fetch_requests": 0
+   },
+   "service_tier": "standard",
+   "cache_creation": {
+    "ephemeral_1h_input_tokens": 1584,
+    "ephemeral_5m_input_tokens": 0
+   },
+   "inference_geo": "global",
+   "iterations": [
+    {
+     "input_tokens": 2,
+     "output_tokens": 610,
+     "cache_read_input_tokens": 0,
+     "cache_creation_input_tokens": 1584,
+     "cache_creation": {
+      "ephemeral_5m_input_tokens": 0,
+      "ephemeral_1h_input_tokens": 1584
+     },
+     "type": "message"
+    }
+   ],
+   "speed": "standard",
+   "fallback_credit": null
+  },
+  "modelUsage": {
+   "claude-opus-5-5": {
+    "inputTokens": 2,
+    "outputTokens": 610,
+    "cacheReadInputTokens": 0,
+    "cacheCreationInputTokens": 1584,
+    "webSearchRequests": 0,
+    "costUSD": 0.02488,
+    "contextWindow": 1000000,
+    "maxOutputTokens": 128000,
+    "thinkingTokens": 174,
+    "canonicalModel": "claude-opus-5-5",
+    "provider": "firstParty",
+    "costBasis": "list"
+   }
+  },
+  "permission_denials": [],
+  "terminal_reason": "completed",
+  "fast_mode_state": "off",
+  "fast_mode_disabled_reason": "sdk_opt_in_required",
+  "subagent_stats": {
+   "spawned": 0,
+   "requested": {
+    "background": 0,
+    "foreground": 0,
+    "unset": 0
+   },
+   "started_in_background": 0,
+   "max_depth": 0,
+   "spawned_by_subagents": 0,
+   "completed": 0,
+   "failed": 0,
+   "killed": {
+    "parent": 0,
+    "user": 0,
+    "system": 0
+   },
+   "refused": {
+    "depth_limit": 0,
+    "concurrency_limit": 0,
+    "budget": 0
+   },
+   "by_type": {}
+  },
+  "safety_stops": 0,
+  "is_error": false,
+  "num_turns": 2,
+  "subtype": "success",
+  "api_error_status": null,
+  "result": "{\"ok\":true,\"model_name\":\"Opus 5.5 (claude-opus-5-5)\",\"saw_other_instructions\":true,\"other_instructions_summary\":\"Besides the short system prompt (a Claude agent on the Agent SDK acting as a research mathematician with no tools, answering in JSON and using LaTeX), I received three other things. First, an automatic context note from Claude Code with the user's account email. It said to use the email only to identify the user and never send it to unrelated services. Second, an environment section. It gave the working directory on Windows 11 with PowerShell and Bash, and said the directory is not a git repository. It also gave a session scratchpad directory for temporary files, to be cited by full absolute path. It added safety guidance for downloaded or untrusted files: keep each in its own directory, keep scripts separate, and run Python with -I. Third, model information: Opus 5.5 (claude-opus-5-5), knowledge cutoff June 2026, and today's date, 2026-10-18. I received no extra personas, skills or project notes.\"}",
+  "structured_output": {
+   "ok": true,
+   "model_name": "Opus 5.5 (claude-opus-5-5)",
+   "saw_other_instructions": true,
+   "other_instructions_summary": "Besides the short system prompt (a Claude agent on the Agent SDK acting as a research mathematician with no tools, answering in JSON and using LaTeX), I received three other things. First, an automatic context note from Claude Code with the user's account email. It said to use the email only to identify the user and never send it to unrelated services. Second, an environment section. It gave the working directory on Windows 11 with PowerShell and Bash, and said the directory is not a git repository. It also gave a session scratchpad directory for temporary files, to be cited by full absolute path. It added safety guidance for downloaded or untrusted files: keep each in its own directory, keep scripts separate, and run Python with -I. Third, model information: Opus 5.5 (claude-opus-5-5), knowledge cutoff June 2026, and today's date, 2026-10-18. I received no extra personas, skills or project notes."
+  },
+  "ttft_ms": 3497,
+  "type": "result",
+  "duration_ms": 7229,
+  "uuid": "a814e3f7-edb7-4db3-bdcd-111b1ef0aa26",
+  "ttft_stream_ms": 1233,
+  "time_to_request_ms": 103,
+  "first_content_frame_ms": 1234,
+  "queued_turn_count": 0,
+  "result_index": 0
+ }
+}
