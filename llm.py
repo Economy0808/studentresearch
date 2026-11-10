@@ -11,6 +11,7 @@ from store import now
 
 MODELS = ["sonnet", "opus", "fable"]
 GRADE = {"sonnet": 1, "opus": 2, "fable": 3}
+PINNED = {"sonnet": "claude-sonnet-5-5", "opus": "claude-opus-5-5", "fable": "claude-fable-5-1"}  # exact names passed to --model (user decision 2026-11-10); data still records the alias
 CALL_TIMEOUT = 3600  # seconds per CLI call, same for every model (user decision 2026-10-29; was 1800)
 TIMEOUT_PREFIX = "timeout after "  # failure messages that start with this are per-call timeouts (pipeline.is_budget_error)
 # Phrases meaning "stop the whole run" (login or plan usage limit). Matched only against the CLI's `result` text.
@@ -76,11 +77,10 @@ def call(model: str, system: str, prompt: str, schema: dict, raw_path: Path, dry
                                    ensure_ascii=False, indent=1), encoding="utf-8")
     _raise_if_error(out)
     used = list(out.get("modelUsage") or {})
-    if not dry_run:
-        others = [k for k in used if any(m != model and m in k.lower() for m in GRADE)]
-        if others or not any(model in k.lower() for k in used):
-            raise StopRun(f"answered by {used or 'unknown model'}, not {model}; the CLI fell back or the alias is wrong — "
-                          "wait for the limit window or fix --models, then rerun")
+    others = [k for k in used if any(m != model and m in k.lower() for m in GRADE)]  # another experiment model answered (part of) it
+    if not dry_run and (PINNED[model] not in used or others):  # a helper model (haiku) listed beside the pinned name is fine
+        raise StopRun(f"answered by {used or 'unknown model'}, not {PINNED[model]}; the CLI fell back or the model name is wrong — "
+                      "wait for the limit window or fix --models, then rerun")
     data = out.get("structured_output")
     if data is None:
         try:
@@ -121,7 +121,7 @@ def _cli(model: str, system: str, prompt: str, schema: dict, cwd: Path) -> dict:
     # Hidden context: auto-memory attaches from a project cwd (so cwd is a neutral temp folder), and MCP
     # instructions come from account connectors (so --strict-mcp-config with an empty server list).
     cwd.mkdir(parents=True, exist_ok=True)
-    cmd = [claude_exe(), "-p", "--model", model, "--output-format", "json",
+    cmd = [claude_exe(), "-p", "--model", PINNED[model], "--output-format", "json",
            "--json-schema", json.dumps(schema), "--tools", "", "--system-prompt", system,
            "--setting-sources", "project", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
            "--no-session-persistence"]

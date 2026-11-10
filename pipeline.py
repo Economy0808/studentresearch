@@ -147,16 +147,24 @@ def _write_checker(data_dir: Path, p: dict) -> None:
     (cdir / f"{p['id']}.py").write_text(header + p["checker_code"], encoding="utf-8")
 
 
-def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False) -> int:
+def solve(data_dir: Path, models=llm.MODELS, dry_run: bool = False, only: list[str] | None = None) -> int:
     template = load_prompt("solve.md")
     schema = _schema(SOLVE_PROPS)
     sol_path = data_dir / "solutions.jsonl"
     done = {(s["problem_id"], s["solver"]) for s in read_jsonl(sol_path)}
     timeouts = Counter((f["target_id"], f["model"]) for f in read_jsonl(data_dir / "failures.jsonl")
                        if f.get("stage") == "solve" and is_budget_error(f.get("error")))
-    cells = [(p, m) for p in all_problems(data_dir) for m in models if (p["id"], m) not in done]
+    probs = all_problems(data_dir)
+    if only is not None:  # --only: just these problems, in the order given (and no re-sorting below)
+        by_id = {p["id"]: p for p in probs}
+        unknown = [i for i in only if i not in by_id]
+        if unknown:
+            raise SystemExit(f"--only has problem id(s) not among the valid problems: {unknown}")
+        probs = [by_id[i] for i in dict.fromkeys(only)]
+    cells = [(p, m) for p in probs for m in models if (p["id"], m) not in done]
     # untried cells first (stable sort keeps problem order); cells that already owe a budget row go first because they cost no call
-    cells.sort(key=lambda c: n if (n := timeouts[(c[0]["id"], c[1])]) < TIME_BUDGET_ATTEMPTS else -1)
+    if only is None:
+        cells.sort(key=lambda c: n if (n := timeouts[(c[0]["id"], c[1])]) < TIME_BUDGET_ATTEMPTS else -1)
     made = 0
     for p, model in cells:
         if timeouts[(p["id"], model)] >= TIME_BUDGET_ATTEMPTS:

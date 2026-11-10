@@ -103,7 +103,7 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         except llm.StopRun as e:
             assert want in str(e), e
         else:
-            raise AssertionError(f"{raw_name}: an answer not from opus must raise StopRun")
+            raise AssertionError(f"{raw_name}: an answer without claude-opus-5-5 must raise StopRun")
 
     real_run, real_exe, real_ver = llm.subprocess.run, llm.claude_exe, llm._CLI_VERSION
     llm.subprocess.run, llm.claude_exe, llm._CLI_VERSION = fake_run, lambda: "claude.exe", "claude 9.9.9"
@@ -116,7 +116,7 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
         assert "ANTHROPIC_API_KEY" not in seen["kw"]["env"], "the API key must not reach the CLI (Max plan, not API billing)"
         assert json.loads((tmp / "raw" / "t" / "live.json").read_text(encoding="utf-8"))["cli_version"] == "claude 9.9.9"
         cmd = seen["cmd"]
-        assert cmd[:4] == ["claude.exe", "-p", "--model", "opus"], cmd
+        assert cmd[:4] == ["claude.exe", "-p", "--model", "claude-opus-5-5"], cmd
         for flag, val in (("--output-format", "json"), ("--tools", ""), ("--system-prompt", "SYS"),
                           ("--setting-sources", "project")):
             assert cmd[cmd.index(flag) + 1] == val, (flag, cmd)
@@ -136,11 +136,16 @@ def check_cli_offline(tmp: Path, data: Path) -> None:
             raise AssertionError("non-JSON stdout must raise CallFailed")
         logged = json.loads((tmp / "raw" / "t" / "bad.json").read_text(encoding="utf-8"))["cli_output"]
         assert logged["stdout"] == "not json" and logged["is_error"] is True, logged
-        # a fallback to another model stops the whole run (live path only): wrong model, mixed, or no modelUsage at all
+        # an answer without the pinned name, or with another experiment model beside it, stops the whole run (live path only)
         must_stop("wrong.json", {"is_error": False, "structured_output": {"ok": True},
-                                 "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 1}}}, "not opus")
+                                 "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 1}}}, "not claude-opus-5-5")
+        must_stop("alias.json", {"is_error": False, "structured_output": {"ok": True},
+                                 "modelUsage": {"opus": {}}}, "not claude-opus-5-5")  # the alias is not the pinned name
         must_stop("mixed.json", {"is_error": False, "structured_output": {"ok": True},
-                                 "modelUsage": {"claude-opus-5-5": {}, "claude-sonnet-5-5": {}}}, "not opus")
+                                 "modelUsage": {"claude-opus-5-5": {}, "claude-sonnet-5-5": {}}}, "not claude-opus-5-5")
+        seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},  # a helper model beside the pinned one is allowed
+                                          "modelUsage": {"claude-opus-5-5": {}, "claude-haiku-5-5": {}}})
+        assert llm.call("opus", "SYS", "PROMPT", {"type": "object", "properties": {}}, tmp / "raw" / "t" / "helper.json") == {"ok": True}
         must_stop("nousage.json", {"is_error": False, "structured_output": {"ok": True}}, "unknown model")
         seen["stdout_next"] = json.dumps({"is_error": False, "structured_output": {"ok": True},
                                           "modelUsage": {"claude-opus-5-5": {"inputTokens": 1}}})
@@ -295,6 +300,23 @@ def check_solve(tmp: Path, data: Path) -> None:
     fails = read_jsonl(d / "failures.jsonl")
     assert len(fails) == 1 and "claimed_status out of range" in fails[0]["error"], fails
     assert not (d / "solutions.jsonl").exists()
+    # --only: just the named problems, in the order given; an unknown id stops before any call (own data dir)
+    d = tmp / "only" / "data"
+    for i in ("P-0a0a0a", "P-0b0b0b", "P-0c0c0c"):
+        append_jsonl(d / "problems.jsonl", {"id": i, "statement": "s"})
+    try:
+        pipeline.solve(d, ["sonnet"], dry_run=True, only=["P-0b0b0b", "P-nope00"])
+    except SystemExit as e:
+        assert "P-nope00" in str(e), e
+    else:
+        raise AssertionError("an unknown --only id must stop the run")
+    assert not (d / "solutions.jsonl").exists(), "an unknown id must stop before any call"
+    assert pipeline.solve(d, ["sonnet", "opus"], dry_run=True, only=["P-0c0c0c", "P-0a0a0a"]) == 4
+    sols = read_jsonl(d / "solutions.jsonl")
+    assert [(s["problem_id"], s["solver"]) for s in sols] == [("P-0c0c0c", "sonnet"), ("P-0c0c0c", "opus"),
+                                                              ("P-0a0a0a", "sonnet"), ("P-0a0a0a", "opus")], sols
+    assert pipeline.solve(d, ["sonnet"], dry_run=True, only=[]) == 0
+    assert pipeline.solve(d, ["sonnet"], dry_run=True) == 1, "without --only the remaining cell is still solved"
 
 
 def check_time_budget(tmp: Path, data: Path) -> None:

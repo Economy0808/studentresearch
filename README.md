@@ -26,13 +26,15 @@ python run.py eval
 - 한 데이터 폴더에서는 한 번에 하나의 명령만 실행한다(`eval`과 `import-human`을 동시에 돌리면 평가 행이 사라질 수 있다).
 - 단계가 읽는 입력(`context/*.md`, `prompts/`, `human_problems.jsonl`)은 그 단계가 끝날 때까지 고정한다. 컨텍스트 팩을 고치면 `context_id`가 바뀌어 모든 모델의 생성이 처음부터 다시 시작된다.
 - `STOPPED: answered by …`는 모델 한도로 다른 모델이 대신 답한 경우다. 한도가 풀릴 때까지 기다리거나 `--models`로 나머지 모델만 계속 돌린다(`--models`는 하위 명령 앞에 쓴다: `python run.py --models sonnet,opus gen …`). `STOPPED: 5 consecutive failures`는 연속 5회 실패이므로 원인(로그인·네트워크·한도)을 해결한 뒤 다시 친다.
+- `python run.py solve --only P-aaaaaa,P-bbbbbb`는 적힌 문제의 칸만 적힌 순서대로 푼다. 목록에 없는 문제 id가 있으면 호출 전에 멈춘다. `--only`가 없으면 전체를 푼다.
+- CLI에는 별칭 대신 정확한 모델 이름(`claude-sonnet-5-5`, `claude-opus-5-5`, `claude-fable-5-1`)을 넘긴다(2026-11-10부터). 데이터에는 전과 같이 `sonnet`·`opus`·`fable`로 적는다. 응답의 `modelUsage`에 그 이름이 없으면 `STOPPED`로 멈춘다. 다른 실험 모델의 이름이 함께 적혀도 멈춘다. 보조 모델(haiku)이 함께 적힌 것은 허용한다.
 - 같은 항목이 계속 실패하면 `data/failures.jsonl`과 `data/raw/`의 원본을 본다.
 - 손으로 고친 JSONL은 UTF-8이어야 하고, 비정상 종료 뒤에는 마지막 줄이 잘렸는지 확인한다.
 
 ### 실험 기록 및 한계
 - 호출 제한 시간: 2026-10-29까지 30분, 이후 모든 모델 공통 60분. 30분 규칙의 시간 초과 기록과 예산 초과 행 2개를 지워 해당 칸은 60분 규칙으로 다시 풀었다.
 - 예산 규칙: 소진된 시도가 2번이면 "미해결" 대체 행을 기록한다. 10-29부터는 `output token maximum` 초과도 소진된 시도로 센다. 분석은 예산 초과 행을 성공 0으로 세고 평가에서는 뺀다.
-- CLI 기본 출력 한도가 모델마다 달랐다(sonnet·opus 128000, fable 64000). 우리가 설정한 값이 아니며, 한계로 보고한다.
+- CLI 기본 출력 한도가 모델마다 달랐다(sonnet·opus 128000, fable 64000). 우리가 설정한 값이 아니며, 한계로 보고한다. Fable은 응답이 잘리면 같은 호출 안에서 최대 3번 이어 써서 합계 약 256,000토큰까지 썼다. 차이는 합계 분량이 아니라 한 번에 쓸 수 있는 길이다.
 - 추론 노력(reasoning effort)은 모든 단계에서 CLI 기본값이고 기록하지 않았다(한계).
 - 모델 실행이 같은 시기에 이뤄지지 않았다(사용량 한도·장애 때문에 sonnet 전부·opus 대부분·fable 11칸은 10-18/19, 나머지 fable은 10-29~11월 초, opus 4칸은 11월 이후).
 - 생성된 검증형 문제 P-fdf0ff, P-2e0477은 유한 사례가 증명상 불가능해 제외했다(`pipeline.EXCLUDED_PROBLEMS`). 자동 생성 검증형 문제에 대한 발견으로 보고한다.

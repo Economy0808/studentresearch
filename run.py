@@ -49,7 +49,8 @@ def build_parser() -> argparse.ArgumentParser:
     g.add_argument("--context", type=Path, required=True)
     g.add_argument("--kind", choices=["open", "checkable"], required=True)
     g.add_argument("--n", type=int, default=5)
-    sub.add_parser("solve", help="every problem (incl. human_problems.jsonl) × every model")
+    sv = sub.add_parser("solve", help="every problem (incl. human_problems.jsonl) × every model")
+    sv.add_argument("--only", help="comma-separated problem ids: solve just these, in this order")
     sub.add_parser("eval", help="AI raters score every problem and solution, one item per call")
     sub.add_parser("verify", help="run REVIEWED checkers on submitted candidates")
     e = sub.add_parser("export-human", help="write data/blind.json (+ eval_page/index.html if template exists)")
@@ -81,7 +82,8 @@ def main(argv=None) -> None:
         if a.cmd == "gen":
             report(a, pipeline.gen(a.data_dir, a.context, a.kind, a.n, models, a.dry_run))
         elif a.cmd == "solve":
-            report(a, pipeline.solve(a.data_dir, models, a.dry_run))
+            only = [x.strip() for x in a.only.split(",") if x.strip()] if a.only is not None else None
+            report(a, pipeline.solve(a.data_dir, models, a.dry_run, only))
         elif a.cmd == "eval":
             report(a, pipeline.eval_ai(a.data_dir, models, a.dry_run))
         elif a.cmd == "verify":
