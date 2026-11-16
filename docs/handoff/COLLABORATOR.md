@@ -32,7 +32,7 @@
    ```bash
    git clone https://github.com/Economy0808/studentresearch.git
    ```
-2. **파이썬:** 3.11 이상. `pip install -r requirements.txt`(pandas, scipy, matplotlib).
+2. **파이썬:** 연구자 PC와 같은 3.14를 권합니다. `python -m pip install -r requirements.txt`(pandas, scipy, matplotlib).
 3. **Claude Code CLI:** 모델은 이 도구로 부릅니다. API 키가 아니라 Claude 구독 플랜(Max)으로 로그인해야 합니다(`claude` 실행 후 `/login`). 코드는 환경변수 `ANTHROPIC_API_KEY`를 일부러 지우고 부릅니다.
    - 지금까지의 호출은 모두 CLI 2.1.302였습니다. 자동 업데이트는 끄기를 권합니다(실행 창에서 `DISABLE_AUTOUPDATER=1`).
 4. **자체 점검(모델 호출 없음):** `python -X utf8 selfcheck.py` → 마지막 줄 `selfcheck OK`.
