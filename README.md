@@ -1,5 +1,7 @@
 # 학자연 실험 환경
 
+협업자가 실험을 이어 돌리려면 먼저 [docs/handoff/COLLABORATOR.md](docs/handoff/COLLABORATOR.md)를 읽는다.
+
 「AI는 지식폭발을 야기할 것인가」 본 실험(생성 → 풀이 → 평가) 도구. 설계 문서: `docs/superpowers/specs/`, 구현 계획: `docs/superpowers/plans/`.
 
 ## 0. 준비
